@@ -465,12 +465,17 @@ bool TServer::doMain()
 void TServer::DrawScreen() {
 	auto tile = SDL_Rect({ 0, 0, 16, 16});
 	auto tileDest = SDL_Rect({2,2,50,50});
+
 	SDL_FillRect(screen, nullptr, 0);
+
 	int levelWidth = 64, levelHeight = 64, x, y;
+	int cameraWidth = tile.w * levelWidth, cameraHeight = tile.h * levelHeight;
+
 	SDL_Rect chestTile = {static_cast<Sint16>(tile.w * 56),static_cast<Sint16>(tile.h * 15), static_cast<Uint16>(tile.w * 2), static_cast<Uint16>(tile.h * 2)};
 	SDL_Rect chestOpenTile = {static_cast<Sint16>(tile.w * 29),static_cast<Sint16>(tile.h * 19), static_cast<Uint16>(tile.w * 2), static_cast<Uint16>(tile.h * 2)};
 
 	TLevel *level;
+	int mapWidth = 1, mapHeight = 1;
 
 	CString mapLevels;
 	if (localPlayer) {
@@ -480,6 +485,23 @@ void TServer::DrawScreen() {
 		TMap *map = localPlayer->getLevel()?localPlayer->getLevel()->getMap(): nullptr;
 
 		Sint16 cameraX = localPlayer->getPixelX()-screenWidth/2, cameraY = localPlayer->getPixelY()-screenHeight/2;
+
+		if (map) {
+			mapWidth = map->getWidth();
+			mapHeight = map->getHeight();
+		}
+		
+		int cameraMaxX = (cameraWidth * mapWidth) - screenWidth, cameraMaxY = (cameraHeight * mapHeight) - screenHeight;
+
+		if ( cameraX > cameraMaxX)
+			cameraX = cameraMaxX;
+		if ( cameraY > cameraMaxY)
+			cameraY = cameraMaxY;
+
+		if (cameraX < 0)
+			cameraX = 0;
+		if (cameraY < 0)
+			cameraY = 0;
 
 		if (map)
 			mapLevels = map->getLevels();
