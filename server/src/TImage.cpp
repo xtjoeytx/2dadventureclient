@@ -56,11 +56,9 @@ void TImage::render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pH
 	if ( !texture || !loaded )
 		return;
 
-	auto srcRect = SDL_Rect({static_cast<Sint16>(pX),static_cast<Sint16>(pY), static_cast<Uint16>(pWidth), static_cast<Uint16>(pHeight)});
-
+	auto srcRect = SDL_Rect({static_cast<Sint16>(pX+pStartX),static_cast<Sint16>(pY+pStartY), static_cast<Uint16>(pWidth), static_cast<Uint16>(pHeight)});
 
 	SDL_BlitSurface(texture, &srcRect, server->camera, &srcRect);
-
 }
 
 TImage *TImage::find(char *pName, TServer * theServer)

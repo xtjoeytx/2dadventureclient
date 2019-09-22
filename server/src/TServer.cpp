@@ -115,9 +115,8 @@ int TServer::init(const CString& serverip, const CString& serverport, const CStr
 	fps.start();
 
 	ChangeSurfaceSize();
-	camera = SDL_CreateRGBSurface(SDL_HWSURFACE, screenWidth, screenHeight, 32, rmask, gmask, bmask, amask);
-	SDL_EnableKeyRepeat(100,5);
-	
+	SDL_EnableKeyRepeat(1,15);
+
 	SDL_WM_SetCaption("GS2Emu", nullptr);
 
 #ifdef V8NPCSERVER
@@ -194,9 +193,9 @@ int TServer::init(const CString& serverip, const CString& serverport, const CStr
 	localPlayer = new TPlayer(this, nullptr, 2);
 	localPlayer->setType(PLTYPE_CLIENT);
 	localPlayer->loadAccount("localplayer");
-	localPlayer->setHeadImage(settings.getStr("staffhead", "head25.png"));
+	//localPlayer->setHeadImage(settings.getStr("staffhead", "head25.png"));
 	localPlayer->setLoaded(true);
-	localPlayer->warp("onlinestartlocal.nw",32.0f, 32.0f, -1);
+	localPlayer->warp(localPlayer->getLevelName(),localPlayer->getX(), localPlayer->getY(), -1);
 	localPlayer->setLocalPlayer(true);
 
 
@@ -234,7 +233,9 @@ int TServer::init(const CString& serverip, const CString& serverport, const CStr
 	return 0;
 }
 
-void TServer::ChangeSurfaceSize() { screen = SDL_SetVideoMode(screenWidth, screenHeight, 32, SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_RESIZABLE); }
+void TServer::ChangeSurfaceSize() {
+	screen = SDL_SetVideoMode(screenWidth, screenHeight, 32, SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_RESIZABLE);
+}
 
 // Called when the TServer is put into its own thread.
 void TServer::operator()()
@@ -465,60 +466,78 @@ void TServer::DrawScreen() {
 	auto tile = SDL_Rect({ 0, 0, 16, 16});
 	auto tileDest = SDL_Rect({2,2,50,50});
 	SDL_FillRect(screen, nullptr, 0);
+	int levelWidth = 64, levelHeight = 64, x, y;
+	SDL_Rect chestTile = {static_cast<Sint16>(tile.w * 56),static_cast<Sint16>(tile.h * 15), static_cast<Uint16>(tile.w * 2), static_cast<Uint16>(tile.h * 2)};
+	SDL_Rect chestOpenTile = {static_cast<Sint16>(tile.w * 29),static_cast<Sint16>(tile.h * 19), static_cast<Uint16>(tile.w * 2), static_cast<Uint16>(tile.h * 2)};
 
 	TLevel *level;
 
 	CString mapLevels;
 	if (localPlayer) {
-		if ( localPlayer->getLevelName() != nullptr )
-			mapLevels = CString() << localPlayer->getLevelName() << "\n";
-		TMap *map = localPlayer->getMap();
-		if (map) {
+		if ( localPlayer->getLevel() != nullptr )
+			mapLevels = CString() << localPlayer->getLevel()->getLevelName() << "\n";
+
+		TMap *map = localPlayer->getLevel()?localPlayer->getLevel()->getMap(): nullptr;
+
+		Sint16 cameraX = localPlayer->getPixelX()-screenWidth/2, cameraY = localPlayer->getPixelY()-screenHeight/2;
+
+		if (map)
 			mapLevels = map->getLevels();
-		}
-		int cameraWidth = 16*64, cameraHeight = 16*64;
-		SDL_FreeSurface(camera);
-		camera = SDL_CreateRGBSurface(SDL_HWSURFACE, cameraWidth, cameraHeight, 32, rmask, gmask, bmask, amask);
+
+		std::vector<TPlayer *> players;
 
 		while ( mapLevels.bytesLeft() > 0 ) {
 			CString tmpLvlName = mapLevels.readString("\n");
 			level = getLevel(tmpLvlName.guntokenizeI());
+			int gmapX = (level->getMap() ? level->getMap()->getLevelX(level->getLevelName()) : 0);
+			int gmapY = (level->getMap() ? level->getMap()->getLevelY(level->getLevelName()) : 0);
 			if ( level ) {
-				int levelWidth = 64, levelHeight = 64, x, y;
 				for ( y = 0; y < levelHeight; y++ ) {
 					for ( x = 0; x < levelWidth; x++ ) {
 
-						tileDest.x = x * tile.w;
-						tileDest.y = y * tile.h;
-						tile.x = 0;
-						tile.y = 0;
+						tileDest.x = (x * tile.w) + ((levelWidth * tile.w) * gmapX) - cameraX;
+						tileDest.y = (y * tile.h) + ((levelHeight * tile.h) * gmapY) - cameraY;
+
+						if (tileDest.x < -16 || tileDest.x > screenWidth || tileDest.y < -16 || tileDest.y > screenHeight) continue;
 
 						tile.x = TileX(level->getTiles()[y * levelWidth + x], tile.w, pics1->h);
 						tile.y = TileY(level->getTiles()[y * levelWidth + x], tile.w, pics1->h);
 
-						SDL_BlitSurface(pics1, &tile, camera, &tileDest);
+						SDL_BlitSurface(pics1, &tile, screen, &tileDest);
 					}
 				}
 
 				for (auto *sign : *level->getLevelSigns()) {
-					auto signDest = SDL_Rect({static_cast<Sint16>(sign->getX()),static_cast<Sint16>(sign->getY()),32,16});
-					SDL_FillRect(camera, &signDest, 2);
+					auto signDest = SDL_Rect({static_cast<Sint16>((sign->getX()*tile.w) + ((levelWidth * tile.w) * gmapX) - cameraX),static_cast<Sint16>((sign->getY() * tile.h) + ((levelHeight * tile.h) * gmapY) - cameraY),32,16});
+					//SDL_FillRect(screen, &signDest, SDL_MapRGB(screen->format, 0,255,0));
 				}
 
-				for (auto *levelPlayer : *level->getPlayerList())
-					GaniDraw(levelPlayer->getAnimation(), ((64 * tile.w) * (levelPlayer->getMap() ? levelPlayer->getMap()->getLevelX(level->getLevelName()) : 0)) + levelPlayer->getPixelX(), ((64 * tile.h) * (levelPlayer->getMap() ? levelPlayer->getMap()->getLevelY(level->getLevelName()) : 0)) + levelPlayer->getPixelY(), levelPlayer->getProp(PLPROP_SPRITE).readInt() % 4);
+				for (auto *chest : *level->getLevelChests()) {
+					auto chestDest = SDL_Rect({ static_cast<Sint16>((chest->getX() * tile.w) + ((levelWidth * tile.w) * gmapX) - cameraX), static_cast<Sint16>((chest->getY() * tile.h) + ((levelHeight * tile.h) * gmapY) - cameraY), 32, 32});
+
+					if (localPlayer->hasChest(chest,level->getLevelName()))
+						SDL_BlitSurface(pics1, &chestOpenTile, screen, &chestDest);
+					else
+						SDL_BlitSurface(pics1, &chestTile, screen, &chestDest);
+				}
+
+				for (auto *levelPlayer : *level->getPlayerList()) {
+					players.push_back(levelPlayer);
+				}
+
 			}
 		}
-		auto cameraSrc = SDL_Rect({0, 0, static_cast<Uint16>(cameraWidth), static_cast<Uint16>(cameraHeight)});
-		auto cameraDest = SDL_Rect({static_cast<Sint16>(-localPlayer->getPixelX() + screenWidth/2), static_cast<Sint16>(-localPlayer->getPixelY() + screenHeight/2), static_cast<Uint16>(cameraWidth), static_cast<Uint16>(cameraHeight)});
-		SDL_BlitSurface(camera, &cameraSrc, screen, &cameraDest);
 
+		for (auto *levelPlayer : players) {
+			GaniDraw(levelPlayer->getAnimation(), ((levelWidth * tile.w) * (levelPlayer->getMap() ? levelPlayer->getMap()->getLevelX(levelPlayer->getLevel()->getLevelName()) : 0)) + levelPlayer->getPixelX() - cameraX, ((levelHeight * tile.h) * (levelPlayer->getMap() ? levelPlayer->getMap()->getLevelY(levelPlayer->getLevel()->getLevelName()) : 0)) + levelPlayer->getPixelY() - cameraY, levelPlayer->getProp(PLPROP_SPRITE).readInt() % 4);
+		}
+
+		players.clear();
 	}
 
 	SDL_Flip(screen);
 
 	if ( fps.get_ticks() < 1000 / FRAMES_PER_SECOND ) {
-
 		SDL_Delay((1000 / FRAMES_PER_SECOND) - fps.get_ticks());
 	}
 }
@@ -538,7 +557,7 @@ void TServer::SDLEvents() {
 
 		float speed = 0.2;
 
-		if ( event.type == SDL_KEYDOWN ) {
+		if ( event.type == SDL_KEYDOWN || event.type == SDL_KEYUP ) {
 			SDLKey keyPressed = event.key.keysym.sym;
 			int moveX = 0, moveY = 0, dir = localPlayer->getProp(PLPROP_SPRITE).readChar();
 			switch ( keyPressed ) {
@@ -554,39 +573,47 @@ void TServer::SDLEvents() {
 					break;
 			}
 
-			const Uint8 *keyboard_state_array = SDL_GetKeyState(NULL);
-			if (keyboard_state_array[SDLK_UP] && !(keyboard_state_array[SDLK_DOWN]))
+			const Uint8 *keyboard_state_array = SDL_GetKeyState(nullptr);
+			auto ani = "idle";
+			if (keyboard_state_array[SDLK_UP])
 			{
-				moveY -= 16*speed;
+				moveY -= 16.0f*speed;
 				dir = 0;
-			}
-			else if (!keyboard_state_array[SDLK_UP] && keyboard_state_array[SDLK_DOWN])
-			{
-				moveY += 16*speed;
-				dir = 2;
+				ani = "walk";
 			}
 
-			if (keyboard_state_array[SDLK_RIGHT] && !keyboard_state_array[SDLK_LEFT])
+			if (keyboard_state_array[SDLK_DOWN])
 			{
-				moveX += 16*speed;
-				dir = 3;
+				moveY += 16.0f*speed;
+				dir = 2;
+				ani = "walk";
 			}
-			else if (!keyboard_state_array[SDLK_RIGHT] && keyboard_state_array[SDLK_LEFT])
+
+			if (keyboard_state_array[SDLK_RIGHT])
 			{
-				moveX -= 16*speed;
+				moveX += 16.0f*speed;
+				dir = 3;
+				ani = "walk";
+
+			}
+
+			if (keyboard_state_array[SDLK_LEFT])
+			{
+				moveX -= 16.0*speed;
 				dir = 1;
+				ani = "walk";
 			}
 
 
 			int x2 = localPlayer->getPixelX() + moveX;
 			int y2 = localPlayer->getPixelY() + moveY;
 
-			unsigned short xval = abs(x2) << 1, yval = abs(y2) << 1;
-			if (x2 < 0) xval |= 0x0001;
-			if (y2 < 0) yval |= 0x0001;
+			unsigned short fixedX = abs(x2) << 1, fixedY = abs(y2) << 1;
+			if (x2 < 0) fixedX |= 0x0001;
+			if (y2 < 0) fixedY |= 0x0001;
 
-
-			localPlayer->setProps(CString() >> char(PLPROP_X2) >> short(xval) >> char(PLPROP_Y2) >> short(yval) >> char(PLPROP_SPRITE) >> char(dir), true, false, localPlayer);
+			localPlayer->setProps(CString() >> char(PLPROP_X2) >> short(fixedX) >> char(PLPROP_Y2) >> short(fixedY), true, false, localPlayer);
+			localPlayer->setProps(CString() >> char(PLPROP_GANI) >> char(strlen(ani)) << ani >> char(PLPROP_SPRITE) >> char(dir), true, false, localPlayer);
 		}
 	}
 }
@@ -2112,6 +2139,6 @@ void TServer::GaniDraw(const CString &animation, int x, int y, int dir) {
 	auto time_diff = std::chrono::duration_cast<std::chrono::seconds>(currentTimer - startTimer);
 	auto dst = SDL_Rect({static_cast<Sint16>(x+8),static_cast<Sint16>(y+8),32,32});
 
-	SDL_FillRect(camera, &dst, SDL_MapRGB(camera->format, 255,0,0));
+	SDL_FillRect(screen, &dst, SDL_MapRGB(screen->format, 255,0,0));
 
 }

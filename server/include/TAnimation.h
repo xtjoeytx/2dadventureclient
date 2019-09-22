@@ -7,29 +7,6 @@
 
 #include "TImage.h"
 
-class TAnimation
-{
-	public:
-		explicit TAnimation(CString pName);
-		~TAnimation();
-
-		bool loaded;
-		CString name, real;
-
-		bool load();
-		void render(int pX, int pY, int pDir, int *pStep);
-
-		static TAnimation *find(char *pName);
-		TImage *findImage(char *pName);
-	private:
-		bool isloop, iscontinuous, issingledir;
-		CString setbackto;
-		CString animations, imglist, reallist;
-
-		int max;
-		SDL_Thread *thread;
-};
-
 class TAnimationSprite
 {
 	public:
@@ -53,6 +30,34 @@ class TAnimationAni
 
 		inline void render(int pX, int pY);
 };
+
+class TAnimation
+{
+	public:
+		explicit TAnimation(CString pName, TServer * theServer);
+		~TAnimation();
+
+		bool loaded;
+		CString name, real;
+
+		bool load();
+		void render(int pX, int pY, int pDir, int *pStep);
+
+		static TAnimation *find(char *pName, TServer * theServer);
+		TImage *findImage(char *pName, TServer * theServer);
+	private:
+		bool isloop, iscontinuous, issingledir;
+		CString setbackto;
+		std::unordered_map<std::string, TImage *> reallist;
+		std::unordered_map<int, TAnimationSprite *> animationSpriteList;
+		std::unordered_map<int, TAnimationAni *> animationAniList;
+		TServer *server;
+
+		int max;
+		SDL_Thread *thread;
+};
+
+
 
 #include <SDL.h>
 #include <SDL_image.h>

@@ -10,126 +10,116 @@
 #include "TAnimation.h"
 
 /* Animations */
-TAnimation::TAnimation(CString pName)
+TAnimation::TAnimation(CString pName, TServer * theServer)
 {
+	server = theServer;
 	name = pName;
 	real = pName.text() + pName.findl('\\') + 1;
 	load();
 
-	aniList.add(this);
+	animations.emplace(pName.text(), this);
 }
 
 TAnimation::~TAnimation()
 {
-	aniList.remove(this);
+	if ( auto imageIter : animationSpriteList) {
+		delete imageIter->second;
 
-	for (int i = 0; i < imglist.count(); i++)
-		delete (TAnimationSprite *)imglist[i];
-
-	for (int i = 0; i < animations.count(); i++)
-	{
-		CList *list = (CList *)animations[i];
-		for (int i = 0; i < list->count(); i++)
-			delete (TAnimationAni *)list->item(i);
-		delete list;
+		animationSpriteList.erase(imageIter);
 	}
 
-	imglist.clear();
-	animations.clear();
+	auto list = animations.find(name.text());
+	if (list != animations.end()) {
+
+		delete list->second;
+
+		animations.erase(list);
+	}
+
+	animationSpriteList.clear();
+	animationAniList.clear();
 }
 
 bool TAnimation::load()
 {
-	CBuffer pFile;
-	if (!pFile.load(name.text()))
+	auto * fs = server->getFileSystem();
+	auto file = fs->load(name);
+	if (file == nullptr)
 	{
 		delete this;
 		return false;
 	}
 
-	char buffer[65535];
-	unsigned long len = sizeof(buffer);
-	int error = uncompress((Bytef *)buffer, (uLongf *)&len, (const Bytef *)pFile.text(), pFile.length());
-	if (error != Z_OK)
-	{
-		printf("Error Decompressing\n");
-		return false;
-	}
+	auto lines = file.tokenize("\n");
+	bool aniStarted = false;
 
-	CStringList lines;
-	lines.load(buffer, "\r\n");
-
-	if (lines[0] == "PANI001")
+	for (const auto& line : lines)
 	{
-		for (int i = 1; i < lines.count(); i++)
+		auto words = line.tokenize(" ");
+
+		if (words.empty())
+			continue;
+
+		if (words[0] == "CONTINUOUS" && words.size() == 2)
 		{
-			CStringList words;
-			words.load(lines[i].text(), " ");
-			if (words.count() < 1)
-				continue;
+			iscontinuous = atoi(words[1].text());
+		}
+		else if (words[0] == "LOOP" && words.size() == 2)
+		{
+			isloop = atoi(words[1].text());
+		}
+		else if (words[0] == "SETBACKTO" && words.size() == 2)
+		{
+			setbackto = words[1];
+		}
+		else if (words[0] == "SINGLEDIRECTION" && words.size() == 2)
+		{
+			issingledir = atoi(words[1].text());
+		}
+		else if (words[0] == "SPRITE" && words.size() == 7)
+		{
+			animationSpriteList.emplace(new TAnimationSprite(atoi(words[1].text()), findImage(words[2].text(), server), atoi(words[3].text()), atoi(words[4].text()), atoi(words[5].text()), atoi(words[6].text())));
+		}
+		else if (words[0] == "ANI" && words.size() == 1)
+		{
+			aniStarted = true;
+		}
+		else if (aniStarted) {
+			if(line != "ANIEND")
+			{
+				if (line.find("PLAYSOUND") == 0)
+					continue;
 
-			if (words[0] == "CONTINUOUS" && words.count() == 2)
-			{
-				iscontinuous = atoi(words[1].text());
-			}
-				else if (words[0] == "LOOP" && words.count() == 2)
-			{
-				isloop = atoi(words[1].text());
-			}
-				else if (words[0] == "SETBACKTO" && words.count() == 2)
-			{
-				setbackto = words[1];
-			}
-				else if (words[0] == "SINGLEDIRECTION" && words.count() == 2)
-			{
-				issingledir = atoi(words[1].text());
-			}
-				else if (words[0] == "SPRITE" && words.count() == 7)
-			{
-				imglist.add(new TAnimationSprite(atoi(words[1].text()), findImage(words[2].text()), atoi(words[3].text()), atoi(words[4].text()), atoi(words[5].text()), atoi(words[6].text())));
-			}
-				else if (words[0] == "ANI" && words.count() == 1)
-			{
-				for (i++; i < lines.count() && lines[i] != "ANIEND"; i++)
+				for (int i=0; i < words.size(); i++)
 				{
-					if (lines[i].find("PLAYSOUND") == 0)
-						continue;
-
-					CList *list = new CList();
-					animations.add(list);
-					words.load(lines[i].text(), " ");
-					for (int i = 0; i < words.count(); i++)
-					{
-						int sprite, x, y;
-						sprite = atoi(words[i].text()); i++;
-						x      = atoi(words[i].text()); i++;
-						y      = atoi(words[i].text());
-						list->add(new TAnimationAni((TAnimationSprite *)imglist[sprite], x, y));
-					}
-
+					int sprite, x, y;
+					sprite = atoi(words[i].text()); i++;
+					x      = atoi(words[i].text()); i++;
+					y      = atoi(words[i].text());
+					animationAniList.emplace(new TAnimationAni(animationSpriteList[sprite], x, y));
 				}
+
+			} else {
+				aniStarted = false;
 			}
 		}
+	}
 
-		max = (issingledir ? animations.count() : animations.count() / 4);
-	}
-		else
-	{
-		return false;
-	}
+	max = (issingledir ? animationAniList.size() : animationAniList.size() / 4);
+
 
 	return true;
 }
 
 void TAnimation::render(int pX, int pY, int pDir, int *pStep)
 {
-	if (animations.count() < 1)
+	if ( animationAniList.size() < 1)
 		return;
 
 	*pStep = (*pStep + 1) % max;
 
 	//*pStep = (isloop ? (*pStep + 1) % max : (*pStep < max-1 ? *pStep + 1 : *pStep));
-	CList *list = (CList *)animations[(issingledir ? *pStep : *pStep * 4 + pDir)];
+	CList *list = (CList *)animationAniList[(issingledir ? *pStep : *pStep * 4 + pDir)];
 
 	if (list == NULL)
 		return;
@@ -144,29 +134,26 @@ void TAnimation::render(int pX, int pY, int pDir, int *pStep)
 	}
 }
 
-TAnimation *TAnimation::find(char *pName)
+TAnimation *TAnimation::find(char *pName, TServer * theServer)
 {
-	for (int i = 0; i < aniList.count(); i++)
-	{
-		TAnimation *ani = (TAnimation *)aniList[i];
-		if (ani->real == pName)
-			return ani;
+	auto aniIter = animations.find(pName);
+	if (aniIter != animations.end()) {
+		return aniIter->second;
 	}
 
-	return new TAnimation(TFile::find(pName));
+	return new TAnimation(theServer->getFileSystem(0)->find(pName), theServer);
 }
 
-TImage *TAnimation::findImage(char *pName)
+TImage *TAnimation::findImage(char *pName, TServer * theServer)
 {
-	for (int i = 0; i < reallist.count(); i++)
-	{
-		TImage *img = (TImage *)reallist[i];
-		if (img->real == pName)
-			return img;
+	auto imageIter = reallist.find(pName);
+	if (imageIter != reallist.end()) {
+		return imageIter->second;
 	}
 
-	reallist.add(TImage::find(pName));
-	return (TImage *)reallist[reallist.count() - 1];
+	auto * img = TImage::find(pName, theServer);
+	reallist.emplace(pName, img);
+	return img;
 }
 
 TAnimationSprite::TAnimationSprite(int pSprite, TImage *pImage, int pX, int pY, int pW, int pH)
@@ -181,7 +168,7 @@ TAnimationSprite::TAnimationSprite(int pSprite, TImage *pImage, int pX, int pY, 
 
 TAnimationSprite::~TAnimationSprite()
 {
-	if (img == NULL)
+	if (img == nullptr)
 		return;
 
 	img->countChange(-1);
@@ -189,7 +176,7 @@ TAnimationSprite::~TAnimationSprite()
 
 void TAnimationSprite::render(int pX, int pY)
 {
-	if (img == NULL)
+	if (img == nullptr)
 		return;
 
 	img->render(pX, pY, x, y, w, h);
@@ -204,7 +191,7 @@ TAnimationAni::TAnimationAni(TAnimationSprite *pImg, int pX, int pY)
 
 void TAnimationAni::render(int pX, int pY)
 {
-	if (img == NULL)
+	if (img == nullptr)
 		return;
 
 	img->render(pX + x, pY + y);
