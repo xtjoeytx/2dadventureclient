@@ -294,7 +294,7 @@ void TPlayer::createFunctions()
 	TPLFunc[PLI_NC_CLASSDELETE] = &TPlayer::msgPLI_NC_CLASSDELETE;
 	TPLFunc[PLI_NC_LEVELLISTGET] = &TPlayer::msgPLI_NC_LEVELLISTGET;
 #endif
-	
+
 	// Finished
 	TPlayer::created = true;
 }
@@ -307,10 +307,10 @@ TPlayer::TPlayer(TServer* pServer, CSocket* pSocket, int pId)
 : TAccount(pServer),
 playerSock(pSocket), key(0),
 os("wind"), codepage(1252), level(0),
-id(pId), type(PLTYPE_AWAIT), versionID(CLVER_2_17), allowBomb(false), allowBow(false),
+id(pId), type(PLTYPE_AWAIT), versionID(CLVER_4_208), allowBomb(false), allowBow(false),
 pmap(0), carryNpcId(0), carryNpcThrown(false), loaded(false),
 nextIsRaw(false), rawPacketSize(0), isFtp(false),
-grMovementUpdated(false),
+grMovementUpdated(false), isLocalPlayer(false),
 fileQueue(pSocket),
 packetCount(0), firstLevel(true), invalidPackets(0)
 #ifdef V8NPCSERVER
@@ -330,6 +330,10 @@ packetCount(0), firstLevel(true), invalidPackets(0)
 	// Create Functions
 	if (!TPlayer::created)
 		TPlayer::createFunctions();
+}
+
+void TPlayer::setLocalPlayer(bool isLocal) {
+	isLocalPlayer = isLocal;
 }
 
 TPlayer::~TPlayer()
@@ -517,7 +521,7 @@ bool TPlayer::doTimedEvents()
 	time_t currTime = time(0);
 
 	// If we are disconnected, delete ourself!
-	if (playerSock == 0 || playerSock->getState() == SOCKET_STATE_DISCONNECTED)
+	if ((playerSock == 0 || playerSock->getState() == SOCKET_STATE_DISCONNECTED) && !isLocalPlayer)
 	{
 		server->deletePlayer(this);
 		return false;
@@ -975,12 +979,12 @@ bool TPlayer::processChat(CString pChat)
 			setChat("Wait 10 seconds before changing your nick again!");
 	}
 	else if (chatParse[0] == "addpmserver")
-	{	
+	{
 		CString newName = pChat.subString(12).trim();
 		addPMServer(newName);
 	}
 	else if (chatParse[0] == "rempmserver")
-	{	
+	{
 		CString newName = pChat.subString(12).trim();
 		remPMServer(newName);
 	}
@@ -2015,12 +2019,12 @@ void TPlayer::setNick(const CString& pNickName, bool force)
 		nickName = newNick;
 		this->guild.clear();
 	}
-	
+
 	if (isExternal)
 	{
 		nickName = pNickName;
 	}
-	
+
 }
 
 bool TPlayer::addWeapon(int defaultWeapon)
@@ -2157,7 +2161,7 @@ bool TPlayer::msgPLI_NULL(CString& pPacket)
 		sendPacket(CString() >> (char)PLO_DISCMESSAGE << "Disconnected for sending invalid packets.");
 		return false;
 	}
-	
+
 	return true;
 }
 
@@ -2172,7 +2176,7 @@ bool TPlayer::msgPLI_LOGIN(CString& pPacket)
 #endif
 
 	// TODO(joey): Hijack type based on what graal sends, rather than use it directly.
-	
+
 	// Read Client-Type
 	serverlog.out("[%s] :: New login:\t", server->getName().text());
 	type = (1 << pPacket.readGChar());
@@ -2225,7 +2229,7 @@ bool TPlayer::msgPLI_LOGIN(CString& pPacket)
 		if (in_codec.getGen() > ENCRYPT_GEN_3)
 			fileQueue.setCodec(in_codec.getGen(), key);
 	}
-	
+
 	// Read Client-Version
 	version = pPacket.readChars(8);
 	if (isClient()) versionID = getVersionID(version);
@@ -4001,7 +4005,7 @@ bool TPlayer::updatePMPlayers(CString& servername, CString& players)
 		CString nick = tmpPlyr.readString("\n");
 
 		bool exist = false;
-		if (externalPlayerList.size() != 0)	
+		if (externalPlayerList.size() != 0)
 		{
 			for (std::vector<TPlayer*>::iterator ij = externalPlayerList.begin(); ij != externalPlayerList.end();)
 			{
@@ -4129,7 +4133,7 @@ bool TPlayer::msgPLI_REQUESTTEXT(CString& pPacket)
 		remPMServer(option);
 	else if (type == "irc") {
 	}
-		
+
 
 	serverlog.out("[ IN] [RequestText] %s,%s\n", accountName.gtokenize().text(),packet.text());
 	return true;
@@ -4158,7 +4162,7 @@ bool TPlayer::msgPLI_SENDTEXT(CString& pPacket)
 				CString channel = "#graal";
 				CString channelAccount = CString() << "irc:" << channel;
 				CString channelNick = channel << " (1,0)";
-				
+
 				// RC uses addplayer/delplayer
 				if (isRC())
 				{

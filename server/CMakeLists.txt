@@ -46,6 +46,9 @@ set(
 	src/TServer.cpp
 	src/TServerList.cpp
 	src/TWeapon.cpp
+	src/Timer.cpp
+	src/TImage.cpp
+	#src/TAnimation.cpp
 )
 
 set(
@@ -69,6 +72,9 @@ set(
 	include/TServer.h
 	include/TServerList.h
 	include/TWeapon.h
+	include/Timer.h
+	include/TImage.h
+	#include/TAnimation.h
 )
 
 if(NOT NOUPNP)
@@ -115,7 +121,7 @@ if(V8NPCSERVER)
 		SOURCES
 		src/script/V8ScriptEnv.cpp
 	)
-	
+
 	# GServer specific headers for implementation
 	list(
 		APPEND
@@ -164,6 +170,7 @@ if(V8NPCSERVER)
 	message("V8 include: ${V8_INCLUDE_DIR}")
 	include_directories(${V8_INCLUDE_DIR})
 endif()
+include_directories(${SDL_INCLUDE_DIR})
 
 if(NOT NOUPNP AND NOT MINIUPNPC_FOUND)
 	include_directories(${PROJECT_SOURCE_DIR}/dependencies/miniupnp ${PROJECT_SOURCE_DIR}/dependencies/miniupnp/miniupnpc)
@@ -230,6 +237,8 @@ if(V8NPCSERVER)
 		target_link_libraries(${TARGET_NAME} ${V8_LIBRARY})
 	endif()
 endif()
+
+target_link_libraries(${TARGET_NAME} ${SDL_IMAGE_LIBRARY} ${SDL_LIBRARY})
 
 file(GLOB TEXT
 	"${PROJECT_NAME_LOWER}.wasm"

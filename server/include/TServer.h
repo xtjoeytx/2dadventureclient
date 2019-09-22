@@ -15,6 +15,7 @@
 
 #include "IEnums.h"
 #include "CString.h"
+#include "Timer.h"
 #include "CLog.h"
 #include "CFileSystem.h"
 #include "CSettings.h"
@@ -29,6 +30,8 @@
 
 #ifdef V8NPCSERVER
 #include "CScriptEngine.h"
+#include "TImage.h"
+
 #endif
 
 class TPlayer;
@@ -36,6 +39,9 @@ class TLevel;
 class TNPC;
 class TMap;
 class TWeapon;
+
+const static int FRAMES_PER_SECOND = 60;
+static Timer fps;
 
 enum // Socket Type
 {
@@ -58,6 +64,8 @@ enum
 class TServer : public CSocketStub
 {
 	public:
+		SDL_Surface *screen, *camera, *pics1;
+
 		// Required by CSocketStub.
 		bool onRecv();
 		bool onSend()				{ return true; }
@@ -121,7 +129,7 @@ class TServer : public CSocketStub
 		CSettings* getSettings()						{ return &settings; }
 		CSettings* getAdminSettings()					{ return &adminsettings; }
 		CSocketManager* getSocketManager()				{ return &sockManager; }
-		CString getServerPath()							{ return serverpath; }
+		CString getServerPath()							{ return serverPath; }
 		CString* getServerMessage()						{ return &servermessage; }
 		CString* getAllowedVersionString()				{ return &allowedVersionString; }
 		CTranslationManager* getTranslationManager()	{ return &mTranslationManager; }
@@ -222,7 +230,7 @@ class TServer : public CSocketStub
 		CSettings adminsettings, settings;
 		CSocket playerSock;
 		CSocketManager sockManager;
-		CString allowedVersionString, name, servermessage, serverpath;
+		CString allowedVersionString, name, servermessage, serverPath;
 		CTranslationManager mTranslationManager;
 		CWordFilter wordFilter;
 		CString overrideIP, overrideLocalIP, overridePort, overrideInterface;
@@ -241,7 +249,7 @@ class TServer : public CSocketStub
 		std::set<TPlayer *> deletedPlayers;
 
 		TServerList serverlist;
-		std::chrono::high_resolution_clock::time_point lastTimer, lastNWTimer, last1mTimer, last5mTimer, last3mTimer;
+		std::chrono::high_resolution_clock::time_point lastTimer, startTimer, lastNWTimer, last1mTimer, last5mTimer, last3mTimer;
 #ifdef V8NPCSERVER
 		std::chrono::high_resolution_clock::time_point lastScriptTimer;
 		std::chrono::nanoseconds accumulator;
@@ -251,11 +259,19 @@ class TServer : public CSocketStub
 		TPlayer *mNpcServer;
 		TNPC *mPmHandlerNpc;
 #endif
-	
+
 #ifdef UPNP
 		CUPNP upnp;
 		std::thread upnp_thread;
 #endif
+
+	void SDLEvents();
+
+	void GaniDraw(const CString &animation, int x, int y, int dir);
+
+	void ChangeSurfaceSize();
+
+	void DrawScreen();
 };
 
 inline TNPC * TServer::getNPC(const unsigned int id) const

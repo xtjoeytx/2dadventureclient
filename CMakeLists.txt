@@ -157,7 +157,7 @@ elseif(WIN32)
 		# Enable parallel compilation
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
-		
+
 		# Enable static linkage of the Microsoft Visual C/C++ Runtime
 		set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
 		set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
@@ -236,6 +236,8 @@ if(NOT NOUPNP)
 endif()
 
 find_package(Threads REQUIRED)
+find_package(SDL REQUIRED)
+find_package(SDL_image REQUIRED)
 
 # Restore library suffixes
 if(NOT NOSTATIC)

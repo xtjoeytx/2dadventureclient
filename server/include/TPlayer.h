@@ -128,6 +128,7 @@ class TPlayer : public TAccount, public CSocketStub
 		std::vector<CString> getPMServerList();
 		TPlayer* getExternalPlayer(const unsigned short id, bool includeRC = true) const;
 		TPlayer* getExternalPlayer(const CString& account, bool includeRC = true) const;
+		void setLocalPlayer(bool isLocal);
 
 #ifdef V8NPCSERVER
 		bool isProcessed() const { return _processRemoval;  }
@@ -139,7 +140,7 @@ class TPlayer : public TAccount, public CSocketStub
 		inline IScriptWrapped<TPlayer> * getScriptObject() const {
 			return _scriptObject;
 		}
-	
+
 		inline void setScriptObject(IScriptWrapped<TPlayer> *object) {
 			_scriptObject = object;
 		}
@@ -269,7 +270,7 @@ class TPlayer : public TAccount, public CSocketStub
 		bool msgPLI_NC_CLASSDELETE(CString& pPacket);
 		bool msgPLI_NC_LEVELLISTGET(CString& pPacket);
 #endif
-	
+
 		bool msgPLI_REQUESTTEXT(CString& pPacket);
 		bool msgPLI_SENDTEXT(CString& pPacket);
 
@@ -277,7 +278,8 @@ class TPlayer : public TAccount, public CSocketStub
 		bool msgPLI_UPDATESCRIPT(CString& pPacket);
 		bool msgPLI_RC_UNKNOWN162(CString& pPacket);
 
-	private:
+	bool isLocalPlayer;
+private:
 		// Login functions.
 		bool sendLoginClient();
 		bool sendLoginNC();
@@ -322,7 +324,7 @@ class TPlayer : public TAccount, public CSocketStub
 		int rawPacketSize;
 		bool isFtp;
 		bool grMovementUpdated;
-		CString grMovementPackets;
+	CString grMovementPackets;
 		CString npcserverPort;
 		int packetCount;
 		bool firstLevel;
@@ -333,7 +335,7 @@ class TPlayer : public TAccount, public CSocketStub
 
 		// File queue.
 		CFileQueue fileQueue;
-	
+
 #ifdef V8NPCSERVER
 		bool _processRemoval;
 		IScriptWrapped<TPlayer> *_scriptObject;

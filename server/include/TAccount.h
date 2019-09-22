@@ -141,7 +141,7 @@ class TAccount
 		// Attribute-Managing
 		bool hasChest(const TLevelChest *pChest, const CString& pLevel = "");
 		bool hasWeapon(const CString& pWeapon);
-		
+
 		// Flag-Managing
 		CString getFlag(const std::string& pFlagName) const;
 		void setFlag(CString pFlag);
@@ -150,11 +150,13 @@ class TAccount
 
 		CString translate(const CString& pKey);
 		bool hasRight(int mask)			{ return (adminRights & mask) ? true : false; }
-		
+
 		// get functions
 		bool getGuest()					{ return isGuest; }
 		float getX() const				{ return x; }
 		float getY() const				{ return y; }
+		int getPixelX() const			{ return x2; }
+		int getPixelY() const			{ return y2; }
 		float getPower() const			{ return power; }
 		int getAlignment() const		{ return ap; }
 		int getArrowCount() const		{ return arrowc; }
@@ -176,6 +178,7 @@ class TAccount
 
 		const CString& getAccountName() const	{ return accountName; }
 		const CString& getNickname() const		{ return nickName; }
+		const CString& getLevelName() const		{ return levelName; }
 		const CString& getBodyImage() const		{ return bodyImg; }
 		const CString& getHeadImage() const		{ return headImg; }
 		const CString& getShieldImage() const	{ return shieldImg; }
@@ -208,6 +211,8 @@ class TAccount
 		void setAdminRights(int rights)				{ adminRights = rights; }
 		void setAdminIp(CString ip)					{ adminIp = ip; }
 		void setComments(CString comments)			{ accountComments = comments; }
+		void setPixelX(int setX) 					{ x2 = setX; }
+		void setPixelY(int setY) 					{ y2 = setY; }
 
 	protected:
 		TServer* server;

@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <map>
+#include <SDL.h>
 
 #include "main.h"
 #include "IConfig.h"
@@ -13,6 +14,7 @@
 #include "CLog.h"
 #include "CSocket.h"
 #include "TServer.h"
+
 
 // Linux specific stuff.
 #if !(defined(_WIN32) || defined(_WIN64))
@@ -64,6 +66,8 @@ int main(int argc, char* argv[])
 		// Program announcements.
 		serverlog.out("Graal Reborn GServer version %s\n", GSERVER_VERSION);
 		serverlog.out("Programmed by %s.\n\n", GSERVER_CREDITS);
+
+		SDL_Init(SDL_INIT_EVERYTHING);
 
 		// Load Server Settings
 		if (overrideServer.isEmpty())
