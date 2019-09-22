@@ -490,7 +490,7 @@ void TServer::DrawScreen() {
 			mapWidth = map->getWidth();
 			mapHeight = map->getHeight();
 		}
-		
+
 		int cameraMaxX = (cameraWidth * mapWidth) - screenWidth, cameraMaxY = (cameraHeight * mapHeight) - screenHeight;
 
 		if ( cameraX > cameraMaxX)
@@ -511,8 +511,10 @@ void TServer::DrawScreen() {
 		while ( mapLevels.bytesLeft() > 0 ) {
 			CString tmpLvlName = mapLevels.readString("\n");
 			level = getLevel(tmpLvlName.guntokenizeI());
+
 			int gmapX = (level->getMap() ? level->getMap()->getLevelX(level->getLevelName()) : 0);
 			int gmapY = (level->getMap() ? level->getMap()->getLevelY(level->getLevelName()) : 0);
+
 			if ( level ) {
 				for ( y = 0; y < levelHeight; y++ ) {
 					for ( x = 0; x < levelWidth; x++ ) {
@@ -531,7 +533,6 @@ void TServer::DrawScreen() {
 
 				for (auto *sign : *level->getLevelSigns()) {
 					auto signDest = SDL_Rect({static_cast<Sint16>((sign->getX()*tile.w) + ((levelWidth * tile.w) * gmapX) - cameraX),static_cast<Sint16>((sign->getY() * tile.h) + ((levelHeight * tile.h) * gmapY) - cameraY),32,16});
-					//SDL_FillRect(screen, &signDest, SDL_MapRGB(screen->format, 0,255,0));
 				}
 
 				for (auto *chest : *level->getLevelChests()) {
@@ -551,7 +552,9 @@ void TServer::DrawScreen() {
 		}
 
 		for (auto *levelPlayer : players) {
-			GaniDraw(levelPlayer->getAnimation(), ((levelWidth * tile.w) * (levelPlayer->getMap() ? levelPlayer->getMap()->getLevelX(levelPlayer->getLevel()->getLevelName()) : 0)) + levelPlayer->getPixelX() - cameraX, ((levelHeight * tile.h) * (levelPlayer->getMap() ? levelPlayer->getMap()->getLevelY(levelPlayer->getLevel()->getLevelName()) : 0)) + levelPlayer->getPixelY() - cameraY, levelPlayer->getProp(PLPROP_SPRITE).readInt() % 4);
+			auto dir = levelPlayer->getSprite();
+
+			GaniDraw(levelPlayer, levelPlayer->getAnimation(), ((levelWidth * tile.w) * (levelPlayer->getMap() ? levelPlayer->getMap()->getLevelX(levelPlayer->getLevel()->getLevelName()) : 0)) + levelPlayer->getPixelX() - cameraX, ((levelHeight * tile.h) * (levelPlayer->getMap() ? levelPlayer->getMap()->getLevelY(levelPlayer->getLevel()->getLevelName()) : 0)) + levelPlayer->getPixelY() - cameraY, dir % 4);
 		}
 
 		players.clear();
@@ -635,7 +638,7 @@ void TServer::SDLEvents() {
 			if (y2 < 0) fixedY |= 0x0001;
 
 			localPlayer->setProps(CString() >> char(PLPROP_X2) >> short(fixedX) >> char(PLPROP_Y2) >> short(fixedY), true, false, localPlayer);
-			localPlayer->setProps(CString() >> char(PLPROP_GANI) >> char(strlen(ani)) << ani >> char(PLPROP_SPRITE) >> char(dir), true, false, localPlayer);
+			localPlayer->setProps(CString() >> char(PLPROP_SPRITE) >> char(dir) >> char(PLPROP_GANI) >> char(strlen(ani)) << ani, true, false, localPlayer);
 		}
 	}
 }
@@ -2156,10 +2159,15 @@ void TServer::TS_Save()
 	}
 }
 
-void TServer::GaniDraw(const CString &animation, int x, int y, int dir) {
+void TServer::GaniDraw(TPlayer* player, const CString &animation, int x, int y, int dir) {
 	auto currentTimer = std::chrono::high_resolution_clock::now();
 	auto time_diff = std::chrono::duration_cast<std::chrono::seconds>(currentTimer - startTimer);
 	auto dst = SDL_Rect({static_cast<Sint16>(x+8),static_cast<Sint16>(y+8),32,32});
+
+	auto * ani = TAnimation::find(CString(CString() << animation.text() << ".gani").text(), this);
+	int pStep = 1;
+	if (ani != nullptr)
+		ani->render(player, this, x, y, dir, pStep);
 
 	SDL_FillRect(screen, &dst, SDL_MapRGB(screen->format, 255,0,0));
 

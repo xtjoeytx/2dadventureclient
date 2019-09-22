@@ -10,11 +10,14 @@ TImage::TImage(CString pName, TServer * theServer)
 {
 	server = theServer;
 	name = pName;
-	real = pName.text() + pName.findl('\\') + 1;
+	real = pName.text() + pName.findl(CFileSystem::getPathSeparator()) + 1;
 	imageList.emplace(name.text(),this);
 
 	imgcount = 1;
-	loaded = loadTexture(pName);
+	if (real.find(".png"))
+		loaded = loadTexture(pName);
+	else
+		loaded = true;
 }
 
 TImage::~TImage()
@@ -56,9 +59,9 @@ void TImage::render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pH
 	if ( !texture || !loaded )
 		return;
 
-	auto srcRect = SDL_Rect({static_cast<Sint16>(pX+pStartX),static_cast<Sint16>(pY+pStartY), static_cast<Uint16>(pWidth), static_cast<Uint16>(pHeight)});
-
-	SDL_BlitSurface(texture, &srcRect, server->camera, &srcRect);
+	auto srcRect = SDL_Rect({static_cast<Sint16>(pStartX),static_cast<Sint16>(pStartY), static_cast<Uint16>(pWidth), static_cast<Uint16>(pHeight)});
+	auto dstRect = SDL_Rect({static_cast<Sint16>(pX),static_cast<Sint16>(pY), static_cast<Uint16>(pWidth), static_cast<Uint16>(pHeight)});
+	SDL_BlitSurface(texture, &srcRect, server->screen, &dstRect);
 }
 
 TImage *TImage::find(char *pName, TServer * theServer)

@@ -267,7 +267,7 @@ class TServer : public CSocketStub
 
 	void SDLEvents();
 
-	void GaniDraw(const CString &animation, int x, int y, int dir);
+	void GaniDraw(TPlayer* player, const CString &animation, int x, int y, int dir);
 
 	void ChangeSurfaceSize();
 

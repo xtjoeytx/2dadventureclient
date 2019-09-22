@@ -6,17 +6,21 @@
 #define GS2EMU_TANIMATION_H
 
 #include "TImage.h"
+#include "TPlayer.h"
+#include "TServer.h"
+
+class TPlayer;
 
 class TAnimationSprite
 {
 	public:
-		TAnimationSprite(int pSprite, TImage *pImage, int pX, int pY, int pW, int pH);
+		TAnimationSprite(int pSprite, std::string pImage, int pX, int pY, int pW, int pH);
 		~TAnimationSprite();
 
-		inline void render(int pX, int pY);
+		inline void render(TPlayer * player, TServer * server, int pX, int pY);
 
 	private:
-		TImage *img;
+		std::string img;
 		int sprite, x, y, w, h;
 };
 
@@ -28,7 +32,7 @@ class TAnimationAni
 		int x, y;
 		TAnimationSprite *img;
 
-		inline void render(int pX, int pY);
+		inline void render(TPlayer * player, TServer * server, int pX, int pY);
 };
 
 class TAnimation
@@ -41,16 +45,16 @@ class TAnimation
 		CString name, real;
 
 		bool load();
-		void render(int pX, int pY, int pDir, int *pStep);
+		void render(TPlayer* player, TServer * server, int pX, int pY, int pDir, int pStep);
 
-		static TAnimation *find(char *pName, TServer * theServer);
+		static TAnimation *find(const char *pName, TServer * theServer);
 		TImage *findImage(char *pName, TServer * theServer);
 	private:
 		bool isloop, iscontinuous, issingledir;
 		CString setbackto;
-		std::unordered_map<std::string, TImage *> reallist;
-		std::unordered_map<int, TAnimationSprite *> animationSpriteList;
-		std::unordered_map<int, TAnimationAni *> animationAniList;
+		std::unordered_map<std::string, TImage *> imageList;
+		std::vector<TAnimationSprite *> animationSpriteList;
+		std::vector<TAnimationAni *> animationAniList;
 		TServer *server;
 
 		int max;

@@ -33,9 +33,9 @@ class TPlayer : public TAccount, public CSocketStub
 		// Required by CSocketStub.
 		bool onRecv();
 		bool onSend();
-		bool onRegister()			{ return true; }
+		bool onRegister()				{ return true; }
 		void onUnregister();
-		SOCKET getSocketHandle()	{ return playerSock->getHandle(); }
+		SOCKET getSocketHandle()		{ return playerSock->getHandle(); }
 		bool canRecv();
 		bool canSend();
 
@@ -48,10 +48,11 @@ class TPlayer : public TAccount, public CSocketStub
 		bool sendLogin();
 
 		// Get Properties
-		CSocket* getSocket()	{ return playerSock; }
-		TLevel* getLevel()		{ return level; }
-		TMap* getMap()			{ return pmap; }
-		CString getGroup()		{ return levelGroup; }
+		CSocket* getSocket()			{ return playerSock; }
+		TLevel* getLevel()				{ return level; }
+		TMap* getMap()					{ return pmap; }
+		CString getGroup()				{ return levelGroup; }
+		int getSprite()					{ return sprite; }
 		int getId() const;
 		time_t getLastData() const		{ return lastData; }
 		CString getGuild() const		{ return guild; }

@@ -48,7 +48,7 @@ set(
 	src/TWeapon.cpp
 	src/Timer.cpp
 	src/TImage.cpp
-	#src/TAnimation.cpp
+	src/TAnimation.cpp
 )
 
 set(
@@ -74,7 +74,7 @@ set(
 	include/TWeapon.h
 	include/Timer.h
 	include/TImage.h
-	#include/TAnimation.h
+	include/TAnimation.h
 )
 
 if(NOT NOUPNP)
