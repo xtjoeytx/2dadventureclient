@@ -35,7 +35,29 @@ static Sint16 screenHeight = 600;
 
 Uint32 lastTick;
 
-void TServer::keyPressed(SDL_keysym *keysym)
+SDL_Texture* TServer::loadTexture( std::string path ) {
+	//The final texture
+	SDL_Texture* newTexture = nullptr;
+
+	//Load image at specified path
+	SDL_Surface* loadedSurface = IMG_Load( path.c_str() );
+	if( loadedSurface == nullptr ) {
+		printf( "Unable to load image %s! SDL_image Error: %s\n", path.c_str(), IMG_GetError() );
+	} else {
+		//Create texture from surface pixels
+		newTexture = SDL_CreateTextureFromSurface( renderer, loadedSurface );
+		if( newTexture == nullptr ) {
+			printf( "Unable to create texture from %s! SDL Error: %s\n", path.c_str(), SDL_GetError() );
+		}
+
+		//Get rid of old loaded surface
+		SDL_FreeSurface( loadedSurface );
+	}
+
+	return newTexture;
+}
+
+void TServer::keyPressed(SDL_Keysym *keysym)
 {
 	switch (keysym->sym)
 	{
@@ -44,7 +66,7 @@ void TServer::keyPressed(SDL_keysym *keysym)
 			break;
 
 		case SDLK_f:
-			SDL_WM_ToggleFullScreen( screen );
+			//SDL_SetWindowFullscreen( screen, SDL_WINDOW );
 			break;
 
 		default:
@@ -53,7 +75,7 @@ void TServer::keyPressed(SDL_keysym *keysym)
 	}
 }
 
-void TServer::keyReleased(SDL_keysym *keysym)
+void TServer::keyReleased(SDL_Keysym *keysym)
 {
 	switch (keysym->sym)
 	{
@@ -61,23 +83,18 @@ void TServer::keyReleased(SDL_keysym *keysym)
 			keys[keysym->sym] = false;
 			break;
 	}
-
-	return;
 }
-
 
 void TServer::DrawScreen() {
 	Uint32 curTick = SDL_GetTicks();
 	auto currentTimer = std::chrono::high_resolution_clock::now();
 	typedef std::chrono::duration<float> timeDiff;
 	timeDiff time_diff = currentTimer - startTimer;
+	if (curTick - lastTick >= (1000 / FRAMES_PER_SECOND)) { // 60 fps
+		SDL_RenderClear(renderer);
 
-//	if (curTick - lastTick >= (1000 / FRAMES_PER_SECOND)) // 60 fps
-//	{
 		auto tile = SDL_Rect({ 0, 0, 16, 16});
-		auto tileDest = SDL_Rect({2,2,50,50});
-
-		SDL_FillRect(screen, nullptr, 0);
+		auto tileDest = SDL_Rect({2,2,16,16});
 
 		int levelWidth = 64, levelHeight = 64, x, y;
 		int cameraWidth = tile.w * levelWidth, cameraHeight = tile.h * levelHeight;
@@ -104,15 +121,11 @@ void TServer::DrawScreen() {
 
 			int cameraMaxX = (cameraWidth * mapWidth) - screenWidth, cameraMaxY = (cameraHeight * mapHeight) - screenHeight;
 
-			if ( cameraX > cameraMaxX)
-				cameraX = cameraMaxX;
-			if ( cameraY > cameraMaxY)
-				cameraY = cameraMaxY;
+			if (cameraX > cameraMaxX) cameraX = cameraMaxX;
+			if (cameraY > cameraMaxY) cameraY = cameraMaxY;
 
-			if (cameraX < 0)
-				cameraX = 0;
-			if (cameraY < 0)
-				cameraY = 0;
+			if (cameraX < 0) cameraX = 0;
+			if (cameraY < 0) cameraY = 0;
 
 			if (map)
 				mapLevels = map->getLevels();
@@ -135,10 +148,11 @@ void TServer::DrawScreen() {
 
 							if (tileDest.x < -16 || tileDest.x > screenWidth || tileDest.y < -16 || tileDest.y > screenHeight) continue;
 
-							tile.x = TileX(level->getTiles()[y * levelWidth + x], tile.w, pics1->h);
-							tile.y = TileY(level->getTiles()[y * levelWidth + x], tile.w, pics1->h);
+							tile.x = TileX(level->getTiles()[y * levelWidth + x], tile.w, 512);
+							tile.y = TileY(level->getTiles()[y * levelWidth + x], tile.w, 512);
 
-							SDL_BlitSurface(pics1, &tile, screen, &tileDest);
+							//SDL_BlitSurface(pics1, &tile, screen, &tileDest);
+							SDL_RenderCopy( renderer, pics1, &tile, &tileDest );
 						}
 					}
 
@@ -153,9 +167,9 @@ void TServer::DrawScreen() {
 						auto chestDest = SDL_Rect({ static_cast<Sint16>((chest->getX() * tile.w) + ((levelWidth * tile.w) * gmapX) - cameraX), static_cast<Sint16>((chest->getY() * tile.h) + ((levelHeight * tile.h) * gmapY) - cameraY), 32, 32});
 
 						if (localPlayer->hasChest(chest,level->getLevelName()))
-							SDL_BlitSurface(pics1, &chestOpenTile, screen, &chestDest);
+							SDL_RenderCopy( renderer, pics1, &chestOpenTile, &chestDest );
 						else
-							SDL_BlitSurface(pics1, &chestTile, screen, &chestDest);
+							SDL_RenderCopy(renderer, pics1, &chestTile, &chestDest);
 					}
 
 					for (auto *levelPlayer : *level->getPlayerList()) {
@@ -177,35 +191,51 @@ void TServer::DrawScreen() {
 			ganiObjects.clear();
 		}
 
-		SDL_Flip(screen);
+		SDL_RenderPresent(renderer);
 
+/*
 		if ( fps.get_ticks() < 1000 / FRAMES_PER_SECOND ) {
 			SDL_Delay((1000 / FRAMES_PER_SECOND) - fps.get_ticks());
 		}
+*/
 
 		lastTick = curTick;
 		startTimer = currentTimer;
-//	}
-//	else SDL_Delay(5);
+	}
+	else SDL_Delay(1);
 }
 
 void TServer::ChangeSurfaceSize() {
-	screen = SDL_SetVideoMode(screenWidth, screenHeight, 32, SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_RESIZABLE);
+
+	screen = SDL_CreateWindow("GS2Emu", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth, screenHeight, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+	renderer = SDL_CreateRenderer(screen,-1, SDL_RENDERER_SOFTWARE );
+
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	SDL_RenderClear(renderer);
+	SDL_RenderPresent(renderer);
 }
 
 void TServer::SDLEvents() {
+
+	//const Uint8 keys = SDL_GetKeyboardState(nullptr);
 	if ( SDL_PollEvent(&event)) {
 		if ( event.type == SDL_QUIT ) {
 			shutdownProgram = true;
 		}
 
-		if ( event.type == SDL_VIDEORESIZE) {
-			SDL_FreeSurface(screen);
-			screenWidth = event.resize.w;
-			screenHeight = event.resize.h;
-			ChangeSurfaceSize();
+		if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) {
+			screenWidth = event.window.data1;
+			screenHeight = event.window.data2;
+			SDL_RenderPresent( renderer );
 		}
-
+/*
+		if ( event.type == SDL_WINDOWEVENT_RESIZED) {
+			//SDL_FreeSurface(screen);
+			screenWidth = event.window.event;
+			screenHeight = event.resize.h;
+			//ChangeSurfaceSize();
+		}
+*/
 		if ( event.type == SDL_KEYDOWN ) {
 			keyPressed(&event.key.keysym);
 		}
@@ -219,6 +249,7 @@ void TServer::SDLEvents() {
 	int moveX = 0, moveY = 0, dir = localPlayer->getSprite() % 4;
 
 	auto ani = "idle";
+
 	if (keys[SDLK_UP])
 	{
 		moveY -= 16.0f*speed;
@@ -245,10 +276,7 @@ void TServer::SDLEvents() {
 		moveX += 16.0f*speed;
 		dir = 3;
 		ani = "walk";
-
 	}
-
-
 
 	int x2 = localPlayer->getPixelX() + moveX;
 	int y2 = localPlayer->getPixelY() + moveY;

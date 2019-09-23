@@ -63,16 +63,22 @@ enum
 };
 #define FS_COUNT	7
 
+
+
 class TServer : public CSocketStub
 {
 	public:
-		SDL_Surface *screen, *camera, *pics1;
+		SDL_Window *screen;
+		SDL_Texture *pics1;
+		SDL_Renderer *renderer;
+
 		TPlayer *localPlayer;
-		void keyPressed(SDL_keysym *keysym);
-		void keyReleased(SDL_keysym *keysym);
+		void keyPressed(SDL_Keysym *keysym);
+		void keyReleased(SDL_Keysym *keysym);
 
+		SDL_Texture* loadTexture( std::string path );
 
-	// Required by CSocketStub.
+		// Required by CSocketStub.
 		bool onRecv();
 		bool onSend()				{ return true; }
 		bool onRegister()			{ return true; }

@@ -172,7 +172,7 @@ if(V8NPCSERVER)
 	message("V8 include: ${V8_INCLUDE_DIR}")
 	include_directories(${V8_INCLUDE_DIR})
 endif()
-include_directories(${SDL_INCLUDE_DIR})
+include_directories(${SDL2_INCLUDE_DIR})
 
 if(NOT NOUPNP AND NOT MINIUPNPC_FOUND)
 	include_directories(${PROJECT_SOURCE_DIR}/dependencies/miniupnp ${PROJECT_SOURCE_DIR}/dependencies/miniupnp/miniupnpc)
@@ -240,7 +240,7 @@ if(V8NPCSERVER)
 	endif()
 endif()
 
-target_link_libraries(${TARGET_NAME} ${SDL_IMAGE_LIBRARY} ${SDL_LIBRARY})
+target_link_libraries(${TARGET_NAME} ${SDL2_IMAGE_LIBRARY} ${SDL2_LIBRARY})
 
 file(GLOB TEXT
 	"${PROJECT_NAME_LOWER}.wasm"

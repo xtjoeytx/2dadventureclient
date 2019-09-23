@@ -105,7 +105,8 @@ int TServer::init(const CString& serverip, const CString& serverport, const CStr
 	ChangeSurfaceSize();
 	//SDL_EnableKeyRepeat(1,15);
 
-	SDL_WM_SetCaption("GS2Emu", nullptr);
+	//SDL_WM_SetCaption("GS2Emu", nullptr);
+	SDL_SetWindowTitle(screen,"GS2Emu");
 
 	for (auto & file : *filesystem[0].getFileList()) {
 
@@ -222,7 +223,7 @@ int TServer::init(const CString& serverip, const CString& serverport, const CStr
 
 	auto pics1Path = filesystem->find("pics1.png");
 	serverlog.out("[Pics1Path]\t%s\n", pics1Path.text());
-	pics1 = IMG_Load(pics1Path.text());
+	pics1 = loadTexture(pics1Path.text());
 
 	return 0;
 }
@@ -411,8 +412,6 @@ constexpr std::chrono::nanoseconds timestep(std::chrono::milliseconds(50));
 
 bool TServer::doMain()
 {
-	SDLEvents();
-
 	// Update our socket manager.
 	sockManager.update(0, 5000);		// 5ms
 
@@ -446,6 +445,8 @@ bool TServer::doMain()
 		lastTimer = currentTimer;
 		doTimedEvents();
 	}
+
+	SDLEvents();
 
 	DrawScreen();
 

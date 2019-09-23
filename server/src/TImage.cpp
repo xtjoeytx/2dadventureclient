@@ -1,7 +1,7 @@
 
 #include <unordered_map>
 
-#include <SDL_image.h>
+#include <SDL.h>
 #include "main.h"
 #include "TImage.h"
 #include "TServer.h"
@@ -22,7 +22,7 @@ TImage::TImage(CString pName, TServer * theServer)
 
 TImage::~TImage()
 {
-	SDL_FreeSurface(texture);
+	//SDL_FreeSurface(texture);
 
 	auto imageIter = imageList.find(name.text());
 	if (imageIter != imageList.end()) {
@@ -45,12 +45,12 @@ bool TImage::countChange(int pCount)
 }
 
 bool TImage::loadTexture(CString pImage) {
-	texture = IMG_Load(pImage.text());
+	texture = server->loadTexture(pImage.text());
 	if (!texture)
 		return false;
 
-	width = texture->w;
-	height = texture->h;
+	//width = texture->;
+	//height = texture->h;
 
 	return true;
 }
@@ -62,9 +62,9 @@ void TImage::render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pH
 	auto srcRect = SDL_Rect({static_cast<Sint16>(pStartX),static_cast<Sint16>(pStartY), static_cast<Uint16>(pWidth), static_cast<Uint16>(pHeight)});
 	auto dstRect = SDL_Rect({static_cast<Sint16>(pX),static_cast<Sint16>(pY), static_cast<Uint16>(pWidth), static_cast<Uint16>(pHeight)});
 	if (a < 255) {
-		SDL_SetAlpha(texture, SDL_SRCALPHA, a);
+		SDL_SetTextureAlphaMod(texture, a);
 	}
-	SDL_BlitSurface(texture, &srcRect, server->screen, &dstRect);
+	SDL_RenderCopy( server->renderer, texture, &srcRect, &dstRect );
 }
 
 TImage *TImage::find(std::string pName, TServer * theServer)

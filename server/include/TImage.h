@@ -27,7 +27,7 @@ class TImage
 	private:
 		bool loaded;
 		int imgcount, fullwidth, fullheight, height, width;
-		SDL_Surface * texture;
+		SDL_Texture * texture;
 		TServer *server;
 };
 
