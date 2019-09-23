@@ -1,13 +1,10 @@
-//
-// Created by marlon on 9/22/19.
-//
-
 #include "TServer.h"
 #include "TImage.h"
 #include "main.h"
 #include <SDL_image.h>
 #include <unordered_map>
 #include <TAccount.h>
+#include <CGaniObjectStub.h>
 #include "TAnimation.h"
 
 /* Animations */
@@ -80,7 +77,7 @@ bool TAnimation::load()
 		}
 		else if (words[0] == "SPRITE")
 		{
-			animationSpriteList.emplace(atoi(words[1].text()), new TAnimationSprite(atoi(words[1].text()), words[2].text(), atoi(words[3].text()), atoi(words[4].text()), atoi(words[5].text()), atoi(words[6].text())));
+			animationSpriteList.emplace(atoi(words[1].text()), new TAnimationSprite(atoi(words[1].text()), words[2].text(), atoi(words[3].text()), atoi(words[4].text()), atoi(words[5].text()), atoi(words[6].text()), words[7].text()));
 		}
 		else if (words[0] == "ANI" && words.size() == 1)
 		{
@@ -119,7 +116,7 @@ bool TAnimation::load()
 	return true;
 }
 
-void TAnimation::render(TPlayer * player, TServer * server, int pX, int pY, int pDir, int *pStep, float time)
+void TAnimation::render(CGaniObjectStub * player, TServer * server, int pX, int pY, int pDir, int *pStep, float time)
 {
 	if ( animationAniList.empty() )
 		return;
@@ -130,9 +127,6 @@ void TAnimation::render(TPlayer * player, TServer * server, int pX, int pY, int 
 	} else {
 		auto delta = time;
 		currentWait += (delta * 3);
-		//*pStep = (*pStep) % max;
-		//if (*pStep > 40)
-		//	printf("pStep: %d\n",(*pStep * 4) + pDir);
 	}
 
 	//*pStep = (isLoop ? (*pStep + 1) % max : (*pStep < max-1 ? *pStep + 1 : *pStep));
@@ -181,7 +175,7 @@ TImage *TAnimation::findImage(char *pName, TServer * theServer)
 	return nullptr;
 }
 
-TAnimationSprite::TAnimationSprite(int pSprite, std::string pImage, int pX, int pY, int pW, int pH)
+TAnimationSprite::TAnimationSprite(int pSprite, std::string pImage, int pX, int pY, int pW, int pH, std::string desc)
 {
 	sprite = pSprite;
 	img = pImage;
@@ -189,6 +183,7 @@ TAnimationSprite::TAnimationSprite(int pSprite, std::string pImage, int pX, int 
 	y = pY;
 	w = pW;
 	h = pH;
+	description = desc;
 }
 
 TAnimationSprite::~TAnimationSprite()
@@ -196,17 +191,17 @@ TAnimationSprite::~TAnimationSprite()
 
 }
 
-void TAnimationSprite::render(TPlayer * player, TServer * server, int pX, int pY)
+void TAnimationSprite::render(CGaniObjectStub * player, TServer * server, int pX, int pY)
 {
 	TImage * image = nullptr;
 	std::string tmpImg;
 
 	if (img == "BODY") {
-		tmpImg = player->getProp(PLPROP_BODYIMG).text()+1;
+		tmpImg = player->getBodyImage().text();
 	} else if (img == "HEAD") {
-		tmpImg = player->getProp(PLPROP_HEADGIF).text()+1;
+		tmpImg = player->getHeadImage().text();
 	} else if (img == "ATTR1") {
-		tmpImg = player->getProp(PLPROP_GATTRIB1).text()+1;
+		tmpImg = "";//player->geti;
 	} else if (img == "SPRITES") {
 		tmpImg = "sprites.png";
 	} else {
@@ -218,7 +213,12 @@ void TAnimationSprite::render(TPlayer * player, TServer * server, int pX, int pY
 	if (image == nullptr)
 		return;
 
-	image->render(pX, pY, x, y, w, h);
+	int alpha = SDL_ALPHA_OPAQUE;
+	if (description == "shadow" ) {
+		alpha = (SDL_ALPHA_OPAQUE/3)*2;
+	}
+
+	image->render(pX, pY, x, y, w, h, alpha);
 }
 
 TAnimationAni::TAnimationAni(TAnimationSprite *pImg, int pX, int pY)
@@ -228,7 +228,7 @@ TAnimationAni::TAnimationAni(TAnimationSprite *pImg, int pX, int pY)
 	y = pY;
 }
 
-void TAnimationAni::render(TPlayer * player, TServer * server, int pX, int pY)
+void TAnimationAni::render(CGaniObjectStub * player, TServer * server, int pX, int pY)
 {
 	if (img == nullptr)
 		return;

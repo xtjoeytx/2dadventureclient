@@ -13,6 +13,7 @@
 #ifdef V8NPCSERVER
 #include "ScriptBindings.h"
 #endif
+#include "CGaniObjectStub.h"
 
 class TLevel;
 class TServer;
@@ -280,8 +281,11 @@ class TPlayer : public TAccount, public CSocketStub
 		bool msgPLI_RC_UNKNOWN162(CString& pPacket);
 
 		bool isLocalPlayer;
-		int aniStep;
+
+		int &getAniStep() override { return aniStep; };
 private:
+		int aniStep;
+
 		// Login functions.
 		bool sendLoginClient();
 		bool sendLoginNC();

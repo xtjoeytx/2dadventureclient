@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include "CString.h"
 #include "TLevelChest.h"
+#include "CGaniObjectStub.h"
 
 enum
 {
@@ -124,7 +125,7 @@ enum
 #define propscount	83
 
 class TServer;
-class TAccount
+class TAccount : public CGaniObjectStub
 {
 	public:
 		// Constructor - Deconstructor
@@ -213,7 +214,7 @@ class TAccount
 		void setComments(CString comments)			{ accountComments = comments; }
 		void setPixelX(int setX) 					{ x2 = setX; }
 		void setPixelY(int setY) 					{ y2 = setY; }
-
+		int &getAniStep()			 				{  };
 	protected:
 		TServer* server;
 

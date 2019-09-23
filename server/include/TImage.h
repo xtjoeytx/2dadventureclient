@@ -18,7 +18,7 @@ class TImage
 		bool countChange(int pCount);
 		bool loadTexture(CString pImage);
 		inline void render(int pX, int pY);
-		inline void render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pHeight);
+		inline void render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pHeight, int alpha);
 		inline void render(int pX, int pY, float r, float g, float b, float a);
 		void render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pHeight, float r, float g, float b, float a);
 
@@ -36,9 +36,9 @@ inline void TImage::render(int pX, int pY)
 	render(pX, pY, 0, 0, width, height, 1.0f, 1.0f, 1.0f, 1.0f);
 }
 
-inline void TImage::render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pHeight)
+inline void TImage::render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pHeight, int alpha = SDL_ALPHA_OPAQUE)
 {
-	render(pX, pY, pStartX, pStartY, pWidth, pHeight, 1.0f, 1.0f, 1.0f, 1.0f);
+	render(pX, pY, pStartX, pStartY, pWidth, pHeight, 1.0f, 1.0f, 1.0f, float(alpha));
 }
 
 inline void TImage::render(int pX, int pY, float r, float g, float b, float a)

@@ -114,6 +114,7 @@ void TServer::DrawScreen() {
 				mapLevels = map->getLevels();
 
 			std::vector<TPlayer *> players;
+			std::vector<TNPC *> npcs;
 
 			while ( mapLevels.bytesLeft() > 0 ) {
 				CString tmpLvlName = mapLevels.readString("\n");
@@ -155,6 +156,10 @@ void TServer::DrawScreen() {
 						players.push_back(levelPlayer);
 					}
 
+					for (auto *levelNpc : *level->getLevelNPCs()) {
+						npcs.push_back(levelNpc);
+					}
+
 				}
 			}
 
@@ -163,6 +168,13 @@ void TServer::DrawScreen() {
 
 				GaniDraw(levelPlayer, levelPlayer->getAnimation(), ((levelWidth * tile.w) * (levelPlayer->getMap() ? levelPlayer->getMap()->getLevelX(levelPlayer->getLevel()->getLevelName()) : 0)) + levelPlayer->getPixelX() - cameraX, ((levelHeight * tile.h) * (levelPlayer->getMap() ? levelPlayer->getMap()->getLevelY(levelPlayer->getLevel()->getLevelName()) : 0)) + levelPlayer->getPixelY() - cameraY, dir);
 			}
+
+			for (auto *levelNpc : npcs) {
+				int dir = 0;
+
+				GaniDraw(levelNpc, levelNpc->getProp(NPCPROP_GANI, CLVER_4_208).text()+1, ((levelWidth * tile.w) * (levelNpc->getLevel()->getMap() ? levelNpc->getLevel()->getMap()->getLevelX(levelNpc->getLevel()->getLevelName()) : 0)) + levelNpc->getPixelX() - cameraX, ((levelHeight * tile.h) * (levelNpc->getLevel()->getMap() ? levelNpc->getLevel()->getMap()->getLevelY(levelNpc->getLevel()->getLevelName()) : 0)) + levelNpc->getPixelY() - cameraY, dir);
+			}
+
 
 			players.clear();
 		}
@@ -177,7 +189,7 @@ void TServer::DrawScreen() {
 
 		lastTick = curTick;
 	}
-	else SDL_Delay(1);
+	else SDL_Delay(5);
 }
 
 void TServer::ChangeSurfaceSize() {
@@ -252,7 +264,7 @@ void TServer::SDLEvents() {
 
 }
 
-void TServer::GaniDraw(TPlayer* player, const CString &animation, int x, int y, int dir) {
+void TServer::GaniDraw(CGaniObjectStub* player, const CString &animation, int x, int y, int dir) {
 	auto currentTimer = std::chrono::high_resolution_clock::now();
 	typedef std::chrono::duration<float> timeDiff;
 
@@ -261,7 +273,7 @@ void TServer::GaniDraw(TPlayer* player, const CString &animation, int x, int y, 
 	auto *ani = TAnimation::find(CString(CString() << animation.text() << ".gani").text(), this);
 
 	if (ani != nullptr)
-		ani->render(player, this, x, y, dir, &player->aniStep, time_diff.count());
+		ani->render(player, this, x, y, dir, &player->getAniStep(), time_diff.count());
 
 	startTimer = currentTimer;
 }

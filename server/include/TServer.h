@@ -20,6 +20,7 @@
 #include "CFileSystem.h"
 #include "CSettings.h"
 #include "CSocket.h"
+#include "CGaniObjectStub.h"
 #include "CTranslationManager.h"
 #include "CWordFilter.h"
 #include "TServerList.h"
@@ -272,7 +273,7 @@ class TServer : public CSocketStub
 
 	void SDLEvents();
 
-	void GaniDraw(TPlayer* player, const CString &animation, int x, int y, int dir);
+	void GaniDraw(CGaniObjectStub * player, const CString &animation, int x, int y, int dir);
 
 	void ChangeSurfaceSize();
 

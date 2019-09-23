@@ -61,6 +61,9 @@ void TImage::render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pH
 
 	auto srcRect = SDL_Rect({static_cast<Sint16>(pStartX),static_cast<Sint16>(pStartY), static_cast<Uint16>(pWidth), static_cast<Uint16>(pHeight)});
 	auto dstRect = SDL_Rect({static_cast<Sint16>(pX),static_cast<Sint16>(pY), static_cast<Uint16>(pWidth), static_cast<Uint16>(pHeight)});
+	if (a < 255) {
+		SDL_SetAlpha(texture, SDL_SRCALPHA, a);
+	}
 	SDL_BlitSurface(texture, &srcRect, server->screen, &dstRect);
 }
 

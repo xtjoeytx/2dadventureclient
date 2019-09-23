@@ -10,6 +10,8 @@
 #include <unordered_set>
 #include "ScriptBindings.h"
 #include "ScriptExecutionContext.h"
+#include "CGaniObjectStub.h"
+
 #endif
 
 enum
@@ -145,7 +147,7 @@ enum
 class TServer;
 class TLevel;
 class TPlayer;
-class TNPC
+class TNPC : public CGaniObjectStub
 {
 	public:
 		TNPC(TServer* pServer, bool pLevelNPC = false);
@@ -258,9 +260,12 @@ class TNPC
 		bool runScriptEvents();
 
 		CString getVariableDump();
+		int &getAniStep() { return aniStep; };
+
 #endif
 
 	private:
+		int aniStep;
 		bool blockPositionUpdates;
 		bool levelNPC;
 		time_t modTime[NPCPROP_COUNT];
@@ -365,7 +370,7 @@ inline void TNPC::allowNpcWarping(bool canWarp)
 }
 
 /**
- * Script Engine 
+ * Script Engine
  */
 inline bool TNPC::hasScriptEvent(int flag) const {
 	return ((_scriptEventsMask & flag) == flag);

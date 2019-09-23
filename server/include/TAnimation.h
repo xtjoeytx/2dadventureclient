@@ -1,7 +1,3 @@
-//
-// Created by marlon on 9/22/19.
-//
-
 #ifndef GS2EMU_TANIMATION_H
 #define GS2EMU_TANIMATION_H
 
@@ -14,13 +10,13 @@ class TPlayer;
 class TAnimationSprite
 {
 	public:
-		TAnimationSprite(int pSprite, std::string pImage, int pX, int pY, int pW, int pH);
+		TAnimationSprite(int pSprite, std::string pImage, int pX, int pY, int pW, int pH, std::string desc);
 		~TAnimationSprite();
 
-		inline void render(TPlayer * player, TServer * server, int pX, int pY);
+		inline void render(CGaniObjectStub * player, TServer * server, int pX, int pY);
 
 	private:
-		std::string img;
+		std::string img, description;
 		int sprite, x, y, w, h;
 };
 
@@ -33,7 +29,7 @@ class TAnimationAni
 
 		TAnimationSprite *img;
 
-		inline void render(TPlayer * player, TServer * server, int pX, int pY);
+		inline void render(CGaniObjectStub * player, TServer * server, int pX, int pY);
 };
 
 class TAnimation
@@ -46,7 +42,7 @@ class TAnimation
 		CString name, real;
 
 		bool load();
-		void render(TPlayer* player, TServer * server, int pX, int pY, int pDir, int *pStep, float time);
+		void render(CGaniObjectStub* player, TServer * server, int pX, int pY, int pDir, int *pStep, float time);
 
 		static TAnimation *find(const char *pName, TServer * theServer);
 		TImage *findImage(char *pName, TServer * theServer);

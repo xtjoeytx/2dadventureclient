@@ -299,7 +299,7 @@ void TPlayer::setProps(CString& pPacket, bool pForward, bool pForwardToSelf, TPl
 	while (pPacket.bytesLeft() > 0)
 	{
 		unsigned char propId = pPacket.readGUChar();
-		
+
 		switch (propId)
 		{
 			case PLPROP_NICKNAME:
@@ -314,7 +314,7 @@ void TPlayer::setProps(CString& pPacket, bool pForward, bool pForwardToSelf, TPl
 						setNick("unknown");
 				}
 				else setNick(nick, (rc != nullptr));
-				
+
 				globalBuff >> (char)propId << getProp(propId);
 
 				// Send this if the player is located on another server
@@ -1000,7 +1000,7 @@ CString TPlayer::getProps(const bool *pProps, int pCount)
 		for (int i = 0; i < pCount; ++i)
 		{
 			if (i == PLPROP_JOINLEAVELVL) continue;
-			
+
 			if (i == PLPROP_ATTACHNPC && attachNPC != 0)
 				propPacket >> (char)i << getProp(i);
 
@@ -1012,6 +1012,6 @@ CString TPlayer::getProps(const bool *pProps, int pCount)
 
 	if (isExternal)
 		propPacket >> (char)81 << "!";
-	
+
 	return propPacket;
 }
