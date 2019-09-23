@@ -53,8 +53,8 @@ class TAnimation
 		bool isloop, iscontinuous, issingledir;
 		CString setbackto;
 		std::unordered_map<std::string, TImage *> imageList;
-		std::vector<TAnimationSprite *> animationSpriteList;
-		std::vector<TAnimationAni *> animationAniList;
+		std::unordered_map<int, TAnimationSprite *> animationSpriteList;
+		std::vector<std::vector<TAnimationAni *>> animationAniList;
 		TServer *server;
 
 		int max;

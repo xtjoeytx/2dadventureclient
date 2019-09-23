@@ -552,9 +552,9 @@ void TServer::DrawScreen() {
 		}
 
 		for (auto *levelPlayer : players) {
-			auto dir = levelPlayer->getSprite();
+			auto dir = levelPlayer->getSprite() % 4;
 
-			GaniDraw(levelPlayer, levelPlayer->getAnimation(), ((levelWidth * tile.w) * (levelPlayer->getMap() ? levelPlayer->getMap()->getLevelX(levelPlayer->getLevel()->getLevelName()) : 0)) + levelPlayer->getPixelX() - cameraX, ((levelHeight * tile.h) * (levelPlayer->getMap() ? levelPlayer->getMap()->getLevelY(levelPlayer->getLevel()->getLevelName()) : 0)) + levelPlayer->getPixelY() - cameraY, dir % 4);
+			GaniDraw(levelPlayer, levelPlayer->getAnimation(), ((levelWidth * tile.w) * (levelPlayer->getMap() ? levelPlayer->getMap()->getLevelX(levelPlayer->getLevel()->getLevelName()) : 0)) + levelPlayer->getPixelX() - cameraX, ((levelHeight * tile.h) * (levelPlayer->getMap() ? levelPlayer->getMap()->getLevelY(levelPlayer->getLevel()->getLevelName()) : 0)) + levelPlayer->getPixelY() - cameraY, dir);
 		}
 
 		players.clear();
@@ -584,7 +584,7 @@ void TServer::SDLEvents() {
 
 		if ( event.type == SDL_KEYDOWN || event.type == SDL_KEYUP ) {
 			SDLKey keyPressed = event.key.keysym.sym;
-			int moveX = 0, moveY = 0, dir = localPlayer->getProp(PLPROP_SPRITE).readChar();
+			int moveX = 0, moveY = 0, dir = localPlayer->getSprite() % 4;
 			switch ( keyPressed ) {
 				case SDLK_ESCAPE:
 					shutdownProgram = true;
@@ -628,7 +628,6 @@ void TServer::SDLEvents() {
 				dir = 1;
 				ani = "walk";
 			}
-
 
 			int x2 = localPlayer->getPixelX() + moveX;
 			int y2 = localPlayer->getPixelY() + moveY;
@@ -2162,13 +2161,9 @@ void TServer::TS_Save()
 void TServer::GaniDraw(TPlayer* player, const CString &animation, int x, int y, int dir) {
 	auto currentTimer = std::chrono::high_resolution_clock::now();
 	auto time_diff = std::chrono::duration_cast<std::chrono::seconds>(currentTimer - startTimer);
-	auto dst = SDL_Rect({static_cast<Sint16>(x+8),static_cast<Sint16>(y+8),32,32});
 
 	auto * ani = TAnimation::find(CString(CString() << animation.text() << ".gani").text(), this);
 	int pStep = 1;
 	if (ani != nullptr)
 		ani->render(player, this, x, y, dir, pStep);
-
-	SDL_FillRect(screen, &dst, SDL_MapRGB(screen->format, 255,0,0));
-
 }

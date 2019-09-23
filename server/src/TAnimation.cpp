@@ -23,10 +23,10 @@ TAnimation::TAnimation(CString pName, TServer * theServer)
 
 TAnimation::~TAnimation()
 {
-	for (int i = 0; i < animationSpriteList.size();i++) {
-		delete animationSpriteList[i];
+	for (auto & i : animationSpriteList) {
+		delete i.second;
 
-		animationSpriteList.erase(animationSpriteList.begin() + i);
+		animationSpriteList.erase(i.first);
 	}
 
 	auto list = animations.find(name.text());
@@ -79,7 +79,7 @@ bool TAnimation::load()
 		}
 		else if (words[0] == "SPRITE")
 		{
-			animationSpriteList.push_back(new TAnimationSprite(atoi(words[1].text()), words[2].text(), atoi(words[3].text()), atoi(words[4].text()), atoi(words[5].text()), atoi(words[6].text())));
+			animationSpriteList.emplace(atoi(words[1].text()), new TAnimationSprite(atoi(words[1].text()), words[2].text(), atoi(words[3].text()), atoi(words[4].text()), atoi(words[5].text()), atoi(words[6].text())));
 		}
 		else if (words[0] == "ANI" && words.size() == 1)
 		{
@@ -90,16 +90,16 @@ bool TAnimation::load()
 			{
 				if (line.find("PLAYSOUND") == 0)
 					continue;
-
+				std::vector<TAnimationAni*> anis;
 				for (int i=0; i < words.size(); i++)
 				{
 					int sprite, x, y;
 					sprite = atoi(words[i].text()); i++;
 					x      = atoi(words[i].text()); i++;
 					y      = atoi(words[i].text());
-					animationAniList.push_back(new TAnimationAni(animationSpriteList[sprite], x, y));
+					anis.push_back(new TAnimationAni(animationSpriteList[sprite], x, y));
 				}
-
+				animationAniList.push_back(anis);
 			} else {
 				aniStarted = false;
 			}
@@ -120,12 +120,15 @@ void TAnimation::render(TPlayer * player, TServer * server, int pX, int pY, int 
 	pStep = (pStep + 1) % max;
 
 	//*pStep = (isloop ? (*pStep + 1) % max : (*pStep < max-1 ? *pStep + 1 : *pStep));
-	TAnimationAni *list = animationAniList[(issingledir ? pStep : pStep * 4 + pDir)];
+	auto list = animationAniList[(issingledir ? pStep : pStep * 4 + pDir)];
 
-	if (list == nullptr)
+	if (list.empty())
 		return;
 
-	list->render(player, server, pX, pY);
+	for (auto & i : list) {
+		if (i == nullptr) continue;
+		i->render(player, server, pX, pY);
+	}
 }
 
 TAnimation *TAnimation::find(const char *pName, TServer * theServer)
@@ -172,8 +175,17 @@ TAnimationSprite::~TAnimationSprite()
 void TAnimationSprite::render(TPlayer * player, TServer * server, int pX, int pY)
 {
 	TImage * image = nullptr;
-	if (img == "BODY")
-		image = TImage::find(player->getProp(PLPROP_BODYIMG).text()+1, server);
+	std::string tmpImg;
+
+	if (img == "BODY") {
+		tmpImg = player->getProp(PLPROP_BODYIMG).text() + 1;
+	} else if (img == "HEAD") {
+			tmpImg = player->getProp(PLPROP_HEADGIF).text()+1;
+	} else {
+			tmpImg = img;
+	}
+
+	image = TImage::find(tmpImg, server);
 
 	if (image == nullptr)
 		return;

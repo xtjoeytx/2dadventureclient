@@ -22,7 +22,7 @@ class TImage
 		inline void render(int pX, int pY, float r, float g, float b, float a);
 		void render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pHeight, float r, float g, float b, float a);
 
-		static TImage *find(char *pName, TServer * theServer);
+		static TImage *find(std::string pName, TServer * theServer);
 
 	private:
 		bool loaded;

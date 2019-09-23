@@ -64,7 +64,7 @@ void TImage::render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pH
 	SDL_BlitSurface(texture, &srcRect, server->screen, &dstRect);
 }
 
-TImage *TImage::find(char *pName, TServer * theServer)
+TImage *TImage::find(std::string pName, TServer * theServer)
 {
 	auto imageIter = imageList.find(pName);
 	if (imageIter != imageList.end()) {
