@@ -77,7 +77,7 @@ set(
 	include/TImage.h
 	include/TAnimation.h
 	include/TGameScreen.h
-)
+		include/CGaniObjectStub.h)
 
 if(NOT NOUPNP)
 	list(

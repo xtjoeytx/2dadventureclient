@@ -260,8 +260,9 @@ class TNPC : public CGaniObjectStub
 		bool runScriptEvents();
 
 		CString getVariableDump();
-		int &getAniStep() { return aniStep; };
-
+		int &getAniStep() 						{ return aniStep; }
+		int getSprite() 						{ return sprite; }
+		const CString& getAnimation() const		{ return gani; }
 #endif
 
 	private:

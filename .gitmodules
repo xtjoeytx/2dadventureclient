@@ -7,3 +7,9 @@
 [submodule "dependencies/gs2lib"]
 	path = dependencies/gs2lib
 	url = https://xtjoeytx@bitbucket.org/xtjoeytx/gs2lib.git
+[submodule "dependencies/SDL"]
+	path = dependencies/SDL
+	url = https://github.com/SDL-mirror/SDL.git
+[submodule "dependencies/SDL_image"]
+	path = dependencies/SDL_image
+	url = https://github.com/SDL-mirror/SDL_image.git

@@ -238,6 +238,7 @@ endif()
 find_package(Threads REQUIRED)
 find_package(SDL REQUIRED)
 find_package(SDL_image REQUIRED)
+##add_subdirectory(${PROJECT_SOURCE_DIR}/dependencies/SDL)
 
 # Restore library suffixes
 if(NOT NOSTATIC)

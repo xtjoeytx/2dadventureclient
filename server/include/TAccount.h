@@ -129,7 +129,7 @@ class TAccount : public CGaniObjectStub
 {
 	public:
 		// Constructor - Deconstructor
-		TAccount(TServer* pServer);
+		explicit TAccount(TServer* pServer);
 		~TAccount();
 
 		static bool meetsConditions(CString fileName, CString conditions);
@@ -182,6 +182,9 @@ class TAccount : public CGaniObjectStub
 		const CString& getLevelName() const		{ return levelName; }
 		const CString& getBodyImage() const		{ return bodyImg; }
 		const CString& getHeadImage() const		{ return headImg; }
+		int getSprite()							{ return sprite; }
+
+		TLevel * getLevel() const				{ return nullptr; }
 		const CString& getShieldImage() const	{ return shieldImg; }
 		const CString& getSwordImage() const	{ return swordImg; }
 		const CString& getAnimation() const		{ return gani; }
@@ -214,9 +217,10 @@ class TAccount : public CGaniObjectStub
 		void setComments(CString comments)			{ accountComments = comments; }
 		void setPixelX(int setX) 					{ x2 = setX; }
 		void setPixelY(int setY) 					{ y2 = setY; }
-		int &getAniStep()			 				{  };
+		int &getAniStep()			 				{ return aniStep; }
 	protected:
 		TServer* server;
+		int aniStep;
 
 		// Player-Account
 		bool isBanned, isLoadOnly, isGuest;

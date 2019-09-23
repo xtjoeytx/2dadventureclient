@@ -129,6 +129,8 @@ void TAnimation::render(CGaniObjectStub * player, TServer * server, int pX, int 
 		currentWait += (delta * 3);
 	}
 
+	if (*pStep > max) *pStep = max;
+
 	//*pStep = (isLoop ? (*pStep + 1) % max : (*pStep < max-1 ? *pStep + 1 : *pStep));
 	auto list = animationAniList[(isSingleDir ? *pStep : (*pStep * 4) + pDir)];
 
@@ -200,8 +202,12 @@ void TAnimationSprite::render(CGaniObjectStub * player, TServer * server, int pX
 		tmpImg = player->getBodyImage().text();
 	} else if (img == "HEAD") {
 		tmpImg = player->getHeadImage().text();
+	} else if (img == "SWORD") {
+		tmpImg = player->getSwordImage().text();
+	} else if (img == "SHIELD") {
+		tmpImg = player->getShieldImage().text();
 	} else if (img == "ATTR1") {
-		tmpImg = "";//player->geti;
+		tmpImg = "";//player->get;
 	} else if (img == "SPRITES") {
 		tmpImg = "sprites.png";
 	} else {

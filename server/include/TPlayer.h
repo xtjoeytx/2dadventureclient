@@ -50,7 +50,7 @@ class TPlayer : public TAccount, public CSocketStub
 
 		// Get Properties
 		CSocket* getSocket()			{ return playerSock; }
-		TLevel* getLevel()				{ return level; }
+		TLevel* getLevel() const 		{ return level; }
 		TMap* getMap()					{ return pmap; }
 		CString getGroup()				{ return levelGroup; }
 		int getSprite()					{ return sprite; }
@@ -281,11 +281,7 @@ class TPlayer : public TAccount, public CSocketStub
 		bool msgPLI_RC_UNKNOWN162(CString& pPacket);
 
 		bool isLocalPlayer;
-
-		int &getAniStep() override { return aniStep; };
 private:
-		int aniStep;
-
 		// Login functions.
 		bool sendLoginClient();
 		bool sendLoginNC();
