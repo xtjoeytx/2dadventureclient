@@ -279,7 +279,8 @@ class TPlayer : public TAccount, public CSocketStub
 		bool msgPLI_UPDATESCRIPT(CString& pPacket);
 		bool msgPLI_RC_UNKNOWN162(CString& pPacket);
 
-	bool isLocalPlayer;
+		bool isLocalPlayer;
+		int aniStep;
 private:
 		// Login functions.
 		bool sendLoginClient();
@@ -323,9 +324,10 @@ private:
 		bool loaded;
 		bool nextIsRaw;
 		int rawPacketSize;
+
 		bool isFtp;
 		bool grMovementUpdated;
-	CString grMovementPackets;
+		CString grMovementPackets;
 		CString npcserverPort;
 		int packetCount;
 		bool firstLevel;

@@ -30,6 +30,7 @@ class TAnimationAni
 		TAnimationAni(TAnimationSprite *pImg, int pX, int pY);
 
 		int x, y;
+
 		TAnimationSprite *img;
 
 		inline void render(TPlayer * player, TServer * server, int pX, int pY);
@@ -45,18 +46,19 @@ class TAnimation
 		CString name, real;
 
 		bool load();
-		void render(TPlayer* player, TServer * server, int pX, int pY, int pDir, int pStep);
+		void render(TPlayer* player, TServer * server, int pX, int pY, int pDir, int *pStep, float time);
 
 		static TAnimation *find(const char *pName, TServer * theServer);
 		TImage *findImage(char *pName, TServer * theServer);
 	private:
-		bool isloop, iscontinuous, issingledir;
-		CString setbackto;
+		bool isLoop = false, isContinuous = false, isSingleDir = false;
+		CString setBackTo;
 		std::unordered_map<std::string, TImage *> imageList;
 		std::unordered_map<int, TAnimationSprite *> animationSpriteList;
-		std::vector<std::vector<TAnimationAni *>> animationAniList;
+		std::map<int, std::map<int, TAnimationAni *>> animationAniList;
 		TServer *server;
-
+		float currentWait;
+		float wait = 0.05f;
 		int max;
 		SDL_Thread *thread;
 };

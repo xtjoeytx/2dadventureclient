@@ -49,6 +49,7 @@ set(
 	src/Timer.cpp
 	src/TImage.cpp
 	src/TAnimation.cpp
+	src/TGameScreen.cpp
 )
 
 set(
@@ -75,6 +76,7 @@ set(
 	include/Timer.h
 	include/TImage.h
 	include/TAnimation.h
+	include/TGameScreen.h
 )
 
 if(NOT NOUPNP)

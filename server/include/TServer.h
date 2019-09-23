@@ -23,6 +23,7 @@
 #include "CTranslationManager.h"
 #include "CWordFilter.h"
 #include "TServerList.h"
+#include "TImage.h"
 
 #ifdef UPNP
 #include "CUPNP.h"
@@ -30,8 +31,6 @@
 
 #ifdef V8NPCSERVER
 #include "CScriptEngine.h"
-#include "TImage.h"
-
 #endif
 
 class TPlayer;
@@ -40,7 +39,9 @@ class TNPC;
 class TMap;
 class TWeapon;
 
+extern std::atomic_bool shutdownProgram;
 const static int FRAMES_PER_SECOND = 60;
+static SDL_Event event;
 static Timer fps;
 
 enum // Socket Type
@@ -65,8 +66,12 @@ class TServer : public CSocketStub
 {
 	public:
 		SDL_Surface *screen, *camera, *pics1;
+		TPlayer *localPlayer;
+		void keyPressed(SDL_keysym *keysym);
+		void keyReleased(SDL_keysym *keysym);
 
-		// Required by CSocketStub.
+
+	// Required by CSocketStub.
 		bool onRecv();
 		bool onSend()				{ return true; }
 		bool onRegister()			{ return true; }
