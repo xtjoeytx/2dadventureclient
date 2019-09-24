@@ -103,7 +103,6 @@ int TServer::init(const CString& serverip, const CString& serverport, const CStr
 	fps.start();
 
 	for (auto & file : *filesystem[0].getFileList()) {
-
 		if (file.first.find(".gani"))
 			TAnimation::find(file.first.text(), this);
 	}

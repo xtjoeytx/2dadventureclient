@@ -77,7 +77,7 @@ bool CScriptEngine::Initialize()
 
 	_scriptWatcherRunning.store(true);
 	_scriptWatcherThread = std::thread(&CScriptEngine::ScriptWatcher, this);
-	
+
 	return true;
 }
 
@@ -124,14 +124,14 @@ void CScriptEngine::Cleanup(bool shutDown)
 	_updateWeapons.clear();
 
 	// Remove any registered callbacks
-	for (auto it = _callbacks.begin(); it != _callbacks.end(); ++it) {
-		delete it->second;
+	for (auto & _callback : _callbacks) {
+		delete _callback.second;
 	}
 	_callbacks.clear();
 
 	// Remove cached scripts
-	for (auto it = _cachedScripts.begin(); it != _cachedScripts.end(); ++it) {
-		delete it->second;
+	for (auto & _cachedScript : _cachedScripts) {
+		delete _cachedScript.second;
 	}
 	_cachedScripts.clear();
 
@@ -223,7 +223,7 @@ bool CScriptEngine::ExecuteNpc(TNPC *npc)
 
 	// Wrap user code in a function-object, returning some useful symbols to call for events
 	std::string codeStr = WrapScript<TNPC>(npcScript.text());
-	
+
 	// Search the cache, or compile the script
 	IScriptFunction *compiledScript = CompileCache(codeStr);
 
@@ -298,7 +298,7 @@ void CScriptEngine::RunScripts(bool timedCall)
 				it++;
 		}
 	}
-	
+
 	if (!_updateNpcs.empty() || !_updateWeapons.empty())
 	{
 		_env->CallFunctionInScope([&]() -> void {
@@ -315,10 +315,9 @@ void CScriptEngine::RunScripts(bool timedCall)
 			}
 
 			// Iterate over weapons
-			for (auto it = _updateWeapons.begin(); it != _updateWeapons.end(); ++it)
+			for (auto weapon : _updateWeapons)
 			{
-				TWeapon *weapon = *it;
-				weapon->runScriptEvents();
+					weapon->runScriptEvents();
 			}
 			_updateWeapons.clear();
 		});

@@ -322,6 +322,7 @@ packetCount(0), firstLevel(true), invalidPackets(0)
 	isExternal = false;
 	serverName = server->getName();
 	externalPlayerIds.resize(16000);
+	aniStep = 0;
 	//unsigned int newId = 15999;
 	//externalPlayerIds[newId] = this;
 
@@ -376,13 +377,13 @@ TPlayer::~TPlayer()
 	}
 
 	// Clean up.
-	for (std::vector<SCachedLevel*>::iterator i = cachedLevels.begin(); i != cachedLevels.end(); )
+	for (auto i = cachedLevels.begin(); i != cachedLevels.end(); )
 	{
 		SCachedLevel* cl = *i;
 		delete cl;
 		i = cachedLevels.erase(i);
 	}
-	for (std::map<CString, TLevel*>::iterator i = spLevels.begin(); i != spLevels.end(); )
+	for (auto i = spLevels.begin(); i != spLevels.end(); )
 	{
 		TLevel* cl = i->second;
 		delete cl;
@@ -416,10 +417,8 @@ bool TPlayer::onRecv()
 		return false;
 
 	// Do the main function.
-	if (doMain() == false)
-		return false;
+	return doMain();
 
-	return true;
 }
 
 bool TPlayer::onSend()
@@ -466,7 +465,7 @@ bool TPlayer::doMain()
 		lastData = time(0);
 
 		// packet length
-		unsigned short len = (unsigned short)rBuffer.readShort();
+		auto len = (unsigned short)rBuffer.readShort();
 		if ((unsigned int)len > (unsigned int)rBuffer.length()-2)
 			break;
 
@@ -505,8 +504,8 @@ bool TPlayer::doMain()
 		if (!grMovementUpdated)
 		{
 			std::vector<CString> pack = grMovementPackets.tokenize("\n");
-			for (std::vector<CString>::iterator i = pack.begin(); i != pack.end(); ++i)
-				setProps(*i, true, false);
+			for (auto & i : pack)
+				setProps(i, true, false);
 		}
 		grMovementPackets.clear(42);
 	}
@@ -556,7 +555,7 @@ bool TPlayer::doTimedEvents()
 	// Increase player AP.
 	if (settings->getBool("apsystem") && level != 0)
 	{
-		if (!(status & PLSTATUS_PAUSED) && level->isSparringZone() == false)
+		if ( !(status & PLSTATUS_PAUSED) && !level->isSparringZone())
 			apCounter--;
 
 		if (apCounter <= 0)
@@ -576,9 +575,9 @@ bool TPlayer::doTimedEvents()
 
 	// Do singleplayer level events.
 	{
-		for (std::map<CString, TLevel *>::iterator i = spLevels.begin(); i != spLevels.end(); ++i)
+		for (auto & spLevel : spLevels)
 		{
-			TLevel* level = i->second;
+			TLevel* level = spLevel.second;
 			if (level == 0)
 				continue;
 
@@ -615,7 +614,7 @@ bool TPlayer::parsePacket(CString& pPacket)
 	if (type == PLTYPE_AWAIT)
 	{
 		packetCount++;
-		if (msgPLI_LOGIN(CString() << pPacket.readString("\n")) == false)
+		if ( !msgPLI_LOGIN(CString() << pPacket.readString("\n")))
 			return false;
 	}
 
@@ -829,15 +828,14 @@ bool TPlayer::sendFile(const CString& pPath, const CString& pFile)
 bool TPlayer::testSign()
 {
 	CSettings* settings = server->getSettings();
-	if (settings->getBool("serverside", false) == false) return true;	// TODO: NPC server check instead
+	if ( !settings->getBool("serverside", false)) return true;	// TODO: NPC server check instead
 
 	// Check for sign collisions.
 	if ((sprite % 4) == 0)
 	{
 		std::vector<TLevelSign*>* signs = level->getLevelSigns();
-		for (std::vector<TLevelSign*>::iterator i = signs->begin(); i != signs->end(); ++i)
+		for (auto sign : *signs)
 		{
-			TLevelSign* sign = *i;
 			float signLoc[] = {(float)sign->getX(), (float)sign->getY()};
 			if (y == signLoc[1] && inrange(x, signLoc[0]-1.5f, signLoc[0]+0.5f))
 			{
@@ -863,7 +861,7 @@ void TPlayer::testTouch()
 
 void TPlayer::dropItemsOnDeath()
 {
-	if (server->getSettings()->getBool("dropitemsdead", true) == false)
+	if ( !server->getSettings()->getBool("dropitemsdead", true))
 		return;
 
 	int mindeathgralats = server->getSettings()->getInt("mindeathgralats", 1);
@@ -990,12 +988,12 @@ bool TPlayer::processChat(CString pChat)
 	}
 	else if (chatParse[0] == "sethead" && chatParse.size() == 2)
 	{
-		if (server->getSettings()->getBool("setheadallowed", true) == false) return false;
+		if ( !server->getSettings()->getBool("setheadallowed", true)) return false;
 		processed = true;
 
 		// Get the appropriate filesystem.
 		CFileSystem* filesystem = server->getFileSystem();
-		if (server->getSettings()->getBool("nofoldersconfig", false) == false)
+		if ( !server->getSettings()->getBool("nofoldersconfig", false))
 			filesystem = server->getFileSystem(FS_HEAD);
 
 		// Try to find the file.
@@ -1029,8 +1027,8 @@ bool TPlayer::processChat(CString pChat)
 
 		// Check to see if it is a default body.
 		bool isDefault = false;
-		for (unsigned int i = 0; i < sizeof(__defaultbodies) / sizeof(char*); ++i)
-			if (chatParse[1].match(CString(__defaultbodies[i])) == true) isDefault = true;
+		for (auto & __defaultbodie : __defaultbodies)
+			if ( chatParse[1].match(CString(__defaultbodie))) isDefault = true;
 
 		// Don't search for the file if it is one of the defaults.  This protects against
 		// malicious gservers.
@@ -1042,7 +1040,7 @@ bool TPlayer::processChat(CString pChat)
 
 		// Get the appropriate filesystem.
 		CFileSystem* filesystem = server->getFileSystem();
-		if (server->getSettings()->getBool("nofoldersconfig", false) == false)
+		if ( !server->getSettings()->getBool("nofoldersconfig", false))
 			filesystem = server->getFileSystem(FS_BODY);
 
 		// Try to find the file.
@@ -1071,13 +1069,13 @@ bool TPlayer::processChat(CString pChat)
 	}
 	else if (chatParse[0] == "setsword" && chatParse.size() == 2)
 	{
-		if (server->getSettings()->getBool("setswordallowed", true) == false) return false;
+		if ( !server->getSettings()->getBool("setswordallowed", true)) return false;
 		processed = true;
 
 		// Check to see if it is a default sword.
 		bool isDefault = false;
-		for (unsigned int i = 0; i < sizeof(__defaultswords) / sizeof(char*); ++i)
-			if (chatParse[1].match(CString(__defaultswords[i])) == true) isDefault = true;
+		for (auto & __defaultsword : __defaultswords)
+			if ( chatParse[1].match(CString(__defaultsword))) isDefault = true;
 
 		// Don't search for the file if it is one of the defaults.  This protects against
 		// malicious gservers.
@@ -1089,7 +1087,7 @@ bool TPlayer::processChat(CString pChat)
 
 		// Get the appropriate filesystem.
 		CFileSystem* filesystem = server->getFileSystem();
-		if (server->getSettings()->getBool("nofoldersconfig", false) == false)
+		if ( !server->getSettings()->getBool("nofoldersconfig", false))
 			filesystem = server->getFileSystem(FS_SWORD);
 
 		// Try to find the file.
@@ -1118,13 +1116,13 @@ bool TPlayer::processChat(CString pChat)
 	}
 	else if (chatParse[0] == "setshield" && chatParse.size() == 2)
 	{
-		if (server->getSettings()->getBool("setshieldallowed", true) == false) return false;
+		if ( !server->getSettings()->getBool("setshieldallowed", true)) return false;
 		processed = true;
 
 		// Check to see if it is a default shield.
 		bool isDefault = false;
-		for (unsigned int i = 0; i < sizeof(__defaultshields) / sizeof(char*); ++i)
-			if (chatParse[1].match(CString(__defaultshields[i])) == true) isDefault = true;
+		for (auto & __defaultshield : __defaultshields)
+			if ( chatParse[1].match(CString(__defaultshield))) isDefault = true;
 
 		// Don't search for the file if it is one of the defaults.  This protects against
 		// malicious gservers.
@@ -1136,7 +1134,7 @@ bool TPlayer::processChat(CString pChat)
 
 		// Get the appropriate filesystem.
 		CFileSystem* filesystem = server->getFileSystem();
-		if (server->getSettings()->getBool("nofoldersconfig", false) == false)
+		if ( !server->getSettings()->getBool("nofoldersconfig", false))
 			filesystem = server->getFileSystem(FS_SHIELD);
 
 		// Try to find the file.
@@ -1293,8 +1291,8 @@ bool TPlayer::processChat(CString pChat)
 
 			// Check if the player is in a jailed level.
 			std::vector<CString> jailList = server->getSettings()->getStr("jaillevels").tokenize(",");
-			for (std::vector<CString>::iterator i = jailList.begin(); i != jailList.end(); ++i)
-				if (i->trim() == levelName) return false;
+			for (auto & i : jailList)
+				if (i.trim() == levelName) return false;
 
 			if ((int)difftime(time(0), lastMovement) >= 30)
 			{
@@ -1322,10 +1320,8 @@ bool TPlayer::processChat(CString pChat)
 		CString msg;
 		{
 			std::vector<TPlayer*>* playerList = server->getPlayerList();
-			for (std::vector<TPlayer*>::iterator i = playerList->begin(); i != playerList->end(); ++i)
+			for (auto p : *playerList)
 			{
-				TPlayer* p = *i;
-
 				// If an RC was found, add it to our string.
 				if (p->getType() & PLTYPE_ANYRC)
 					msg << (msg.length() == 0 ? "" : ", ") << p->getAccountName();
@@ -1349,10 +1345,8 @@ bool TPlayer::processChat(CString pChat)
 			CString msg;
 			{
 				std::vector<TPlayer*>* playerList = server->getPlayerList();
-				for (std::vector<TPlayer*>::iterator i = playerList->begin(); i != playerList->end(); ++i)
+				for (auto p : *playerList)
 				{
-					TPlayer* p = *i;
-
 					// If our guild matches, add it to our string.
 					if (p->getGuild() == g)
 						msg << (msg.length() == 0 ? "" : ", ") << p->getNickname().subString(0, p->getNickname().find('(')).trimI();
@@ -1399,9 +1393,8 @@ bool TPlayer::processChat(CString pChat)
 		int num = 0;
 		{
 			std::vector<TPlayer*>* playerList = server->getPlayerList();
-			for (std::vector<TPlayer*>::iterator i = playerList->begin(); i != playerList->end(); ++i)
+			for (auto p : *playerList)
 			{
-				TPlayer* p = *i;
 				if (p == this) continue;
 
 				// If our guild matches, send the PM.
@@ -1423,9 +1416,9 @@ bool TPlayer::processChat(CString pChat)
 bool TPlayer::isAdminIp()
 {
 	std::vector<CString> adminIps = adminIp.tokenize(",");
-	for (std::vector<CString>::iterator i = adminIps.begin(); i != adminIps.end(); ++i)
+	for (auto & adminIp : adminIps)
 	{
-		if (accountIpStr.match(*i))
+		if (accountIpStr.match(adminIp))
 			   return true;
 	}
 
@@ -1435,9 +1428,9 @@ bool TPlayer::isAdminIp()
 bool TPlayer::isStaff()
 {
 	std::vector<CString> staffList = server->getSettings()->getStr("staff").tokenize(",");
-	for (std::vector<CString>::iterator i = staffList.begin(); i != staffList.end(); ++i)
+	for (auto & i : staffList)
 	{
-		if (accountName.toLower() == (*i).trim().toLower())
+		if (accountName.toLower() == i.trim().toLower())
 			return true;
 	}
 
@@ -1495,7 +1488,7 @@ bool TPlayer::warp(const CString& pLevelName, float pX, float pY, time_t modTime
 			pmap = server->getMap(currentLevel);
 			warped = setLevel(currentLevel->getLevelName());
 		}
-		if (warped == false)
+		if ( !warped )
 		{
 			// Failed, so try warping to the unstick level.  If that fails, we disconnect.
 			if (unstickLevel == 0) return false;
@@ -1504,7 +1497,7 @@ bool TPlayer::warp(const CString& pLevelName, float pX, float pY, time_t modTime
 			x = unstickX;
 			y =	unstickY;
 			pmap = server->getMap(unstickLevel);
-			if (setLevel(unstickLevel->getLevelName()) == false)
+			if ( !setLevel(unstickLevel->getLevelName()))
 				return false;
 		}
 	}
@@ -1542,9 +1535,8 @@ bool TPlayer::setLevel(const CString& pLevelName, time_t modTime)
 		{
 			// If any players are in this level, they might have been cached on the client.  Solve this by manually removing them.
 			std::vector<TPlayer*>* plist = level->getPlayerList();
-			for (std::vector<TPlayer*>::iterator i = plist->begin(); i != plist->end(); ++i)
+			for (auto p : *plist)
 			{
-				TPlayer* p = *i;
 				sendPacket(p->getProps(0, 0) >> (char)PLPROP_CURLEVEL >> (char)(level->getLevelName().length() + 1 + 7) << level->getLevelName() << ".unknown" >> (char)PLPROP_X << p->getProp(PLPROP_X) >> (char)PLPROP_Y << p->getProp(PLPROP_Y));
 			}
 
@@ -1605,9 +1597,8 @@ bool TPlayer::setLevel(const CString& pLevelName, time_t modTime)
 
 	// Inform everybody as to the client's new location.  This will update the minimap.
 	CString minimap = this->getProps(0, 0) >> (char)PLPROP_CURLEVEL << this->getProp(PLPROP_CURLEVEL) >> (char)PLPROP_X << this->getProp(PLPROP_X) >> (char)PLPROP_Y << this->getProp(PLPROP_Y);
-	for (std::vector<TPlayer*>::iterator i = server->getPlayerList()->begin(); i != server->getPlayerList()->end(); ++i)
+	for (auto p : *server->getPlayerList())
 	{
-		TPlayer* p = *i;
 		if (p == this)
 			continue;
 		if (pmap && pmap->isGroupMap() && levelGroup != p->getGroup())
@@ -1647,7 +1638,7 @@ bool TPlayer::sendLevel(TLevel* pLevel, time_t modTime, bool fromAdjacent)
 	}
 
 	// Send board changes, chests, horses, and baddies.
-	if (fromAdjacent == false)
+	if ( !fromAdjacent )
 	{
 		sendPacket(CString() << pLevel->getBoardChangesPacket(l_time));
 		sendPacket(CString() << pLevel->getChestPacket(this));
@@ -1663,7 +1654,7 @@ bool TPlayer::sendLevel(TLevel* pLevel, time_t modTime, bool fromAdjacent)
 	// Graal Reborn doesn't support trial accounts so pass 0 (no ghosts) instead of 1 (ghosts present).
 	sendPacket(CString() >> (char)PLO_GHOSTICON >> (char)0);
 
-	if (fromAdjacent == false || pmap != 0)
+	if ( !fromAdjacent || pmap != 0)
 	{
 		// If we are the leader, send it now.
 		if (pLevel->getPlayer(0) == this || pLevel->isSingleplayer() == true)
@@ -1672,7 +1663,7 @@ bool TPlayer::sendLevel(TLevel* pLevel, time_t modTime, bool fromAdjacent)
 
 	// Send new world time.
 	sendPacket(CString() >> (char)PLO_NEWWORLDTIME << CString().writeGInt4(server->getNWTime()));
-	if (fromAdjacent == false || pmap != 0)
+	if ( !fromAdjacent || pmap != 0)
 	{
 		// Send NPCs.
 		if (pmap && pmap->getType() == MAPTYPE_GMAP)
@@ -1697,15 +1688,15 @@ bool TPlayer::sendLevel(TLevel* pLevel, time_t modTime, bool fromAdjacent)
 
 	// Do props stuff.
 	// Maps send to players in adjacent levels too.
-	if (level->isSingleplayer() == false)
+	if ( !level->isSingleplayer())
 	{
 		if (pmap)
 		{
 			server->sendPacketToLevel(this->getProps(__getLogin, sizeof(__getLogin)/sizeof(bool)), pmap, this, false);
 			std::vector<TPlayer*>* playerList = server->getPlayerList();
-			for (std::vector<TPlayer*>::iterator i = playerList->begin(); i != playerList->end(); ++i)
+			for (auto & i : *playerList)
 			{
-				TPlayer* player = (TPlayer*)*i;
+				TPlayer* player = (TPlayer*)i;
 				if (player == 0) continue;
 				if (player == this || player->getMap() != pmap) continue;
 				if (pmap->isGroupMap() && levelGroup != player->getGroup()) continue;
@@ -1730,9 +1721,9 @@ bool TPlayer::sendLevel(TLevel* pLevel, time_t modTime, bool fromAdjacent)
 		{
 			server->sendPacketToLevel(this->getProps(__getLogin, sizeof(__getLogin)/sizeof(bool)), 0, level, this);
 			std::vector<TPlayer*>* playerList = level->getPlayerList();
-			for (std::vector<TPlayer*>::iterator i = playerList->begin(); i != playerList->end(); ++i)
+			for (auto & i : *playerList)
 			{
-				TPlayer* player = (TPlayer*)*i;
+				TPlayer* player = (TPlayer*)i;
 				if (player == this) continue;
 				this->sendPacket(player->getProps(__getLogin, sizeof(__getLogin)/sizeof(bool)));
 			}
@@ -1765,7 +1756,7 @@ bool TPlayer::sendLevel141(TLevel* pLevel, time_t modTime, bool fromAdjacent)
 			firstLevel = false;
 
 			// Send links, signs, and mod time.
-			if (settings->getBool("serverside", false) == false)	// TODO: NPC server check instead.
+			if ( !settings->getBool("serverside", false))	// TODO: NPC server check instead.
 			{
 				sendPacket(CString() << pLevel->getLinksPacket());
 				sendPacket(CString() << pLevel->getSignsPacket(this));
@@ -1775,7 +1766,7 @@ bool TPlayer::sendLevel141(TLevel* pLevel, time_t modTime, bool fromAdjacent)
 		else
 			sendPacket(CString() >> (char)PLO_LEVELBOARD);
 
-		if (fromAdjacent == false)
+		if ( !fromAdjacent )
 		{
 			sendPacket(CString() << pLevel->getBoardChangesPacket2(l_time));
 			sendPacket(CString() << pLevel->getChestPacket(this));
@@ -1783,7 +1774,7 @@ bool TPlayer::sendLevel141(TLevel* pLevel, time_t modTime, bool fromAdjacent)
 	}
 
 	// Send board changes, chests, horses, and baddies.
-	if (fromAdjacent == false)
+	if ( !fromAdjacent )
 	{
 		sendPacket(CString() << pLevel->getHorsePacket());
 		sendPacket(CString() << pLevel->getBaddyPacket(versionID));
@@ -1804,18 +1795,18 @@ bool TPlayer::sendLevel141(TLevel* pLevel, time_t modTime, bool fromAdjacent)
 	sendPacket(CString() >> (char)PLO_NEWWORLDTIME << CString().writeGInt4(server->getNWTime()));
 
 	// Send NPCs.
-	if (fromAdjacent == false)
+	if ( !fromAdjacent )
 		sendPacket(CString() << pLevel->getNpcsPacket(l_time, versionID));
 
 	// Do props stuff.
 	// Maps send to players in adjacent levels too.
-	if (level->isSingleplayer() == false && fromAdjacent == false)
+	if ( !level->isSingleplayer() && !fromAdjacent )
 	{
 		server->sendPacketToLevel(this->getProps(__getLogin, sizeof(__getLogin)/sizeof(bool)), 0, level, this);
 		std::vector<TPlayer*>* playerList = level->getPlayerList();
-		for (std::vector<TPlayer*>::iterator i = playerList->begin(); i != playerList->end(); ++i)
+		for (auto & i : *playerList)
 		{
-			TPlayer* player = (TPlayer*)*i;
+			TPlayer* player = (TPlayer*)i;
 			if (player == this) continue;
 			this->sendPacket(player->getProps(__getLogin, sizeof(__getLogin)/sizeof(bool)));
 		}
@@ -1831,7 +1822,7 @@ bool TPlayer::leaveLevel(bool resetCache)
 
 	// Save the time we left the level for the client-side caching.
 	bool found = false;
-	for (std::vector<SCachedLevel*>::iterator i = cachedLevels.begin(); i != cachedLevels.end();)
+	for (auto i = cachedLevels.begin(); i != cachedLevels.end();)
 	{
 		SCachedLevel* cl = *i;
 		if (cl->level == level)
@@ -1841,7 +1832,7 @@ bool TPlayer::leaveLevel(bool resetCache)
 			i = cachedLevels.end();
 		} else ++i;
 	}
-	if (found == false) cachedLevels.push_back(new SCachedLevel(level, time(0)));
+	if ( !found ) cachedLevels.push_back(new SCachedLevel(level, time(0)));
 
 	// Remove self from list of players in level.
 	level->removePlayer(this);
@@ -1874,10 +1865,9 @@ bool TPlayer::leaveLevel(bool resetCache)
 
 time_t TPlayer::getCachedLevelModTime(const TLevel* level) const
 {
-	for (std::vector<SCachedLevel*>::const_iterator i = cachedLevels.begin(); i != cachedLevels.end(); ++i)
+	for (auto cl : cachedLevels)
 	{
-		SCachedLevel* cl = *i;
-		if (cl->level == level)
+			if (cl->level == level)
 			return cl->modTime;
 	}
 	return 0;
@@ -1885,7 +1875,7 @@ time_t TPlayer::getCachedLevelModTime(const TLevel* level) const
 
 void TPlayer::resetLevelCache(const TLevel* level)
 {
-	for (std::vector<SCachedLevel*>::const_iterator i = cachedLevels.begin(); i != cachedLevels.end(); ++i)
+	for (auto i = cachedLevels.begin(); i != cachedLevels.end(); ++i)
 	{
 		SCachedLevel* cl = *i;
 		if (cl->level == level)
@@ -1988,13 +1978,13 @@ void TPlayer::setNick(const CString& pNickName, bool force)
 
 		// See if we can ask if it is a global guild.
 		bool askGlobal = server->getSettings()->getBool("globalguilds", true);
-		if (askGlobal == false)
+		if ( !askGlobal )
 		{
 			// Check for whitelisted global guilds.
 			std::vector<CString> allowed = server->getSettings()->getStr("allowedglobalguilds").tokenize(",");
-			for (std::vector<CString>::iterator i = allowed.begin(); i != allowed.end(); ++i)
+			for (auto & i : allowed)
 			{
-				if (*i == guild)
+				if (i == guild)
 				{
 					askGlobal = true;
 					break;
@@ -2031,7 +2021,7 @@ bool TPlayer::addWeapon(int defaultWeapon)
 {
 	// Allow Default Weapons..?
 	CSettings *settings = server->getSettings();
-	if (settings->getBool("defaultweapons", true) == false)
+	if ( !settings->getBool("defaultweapons", true))
 		return false;
 
 	TWeapon *weapon = server->getWeapon(TLevelItem::getItemName(defaultWeapon));
@@ -2264,9 +2254,8 @@ bool TPlayer::msgPLI_LOGIN(CString& pPacket)
 	{
 		std::vector<CString>* allowedVersions = server->getAllowedVersions();
 		bool allowed = false;
-		for (std::vector<CString>::iterator i = allowedVersions->begin(); i != allowedVersions->end(); ++i)
+		for (auto ver : *allowedVersions)
 		{
-			CString ver = *i;
 			if (ver.find(":") != -1)
 			{
 				CString ver1 = ver.readString(":").trim();
@@ -2297,7 +2286,7 @@ bool TPlayer::msgPLI_LOGIN(CString& pPacket)
 
 	// Verify login details with the serverlist.
 	// TODO: localhost mode.
-	if (server->getServerList()->getConnected() == false)
+	if ( !server->getServerList()->getConnected())
 	{
 		sendPacket(CString() >> (char)PLO_DISCMESSAGE << "The login server is offline.  Try again later.");
 		return false;
@@ -2439,8 +2428,8 @@ bool TPlayer::msgPLI_TOALL(CString& pPacket)
 {
 	// Check if the player is in a jailed level.
 	std::vector<CString> jailList = server->getSettings()->getStr("jaillevels").tokenize(",");
-	for (std::vector<CString>::iterator i = jailList.begin(); i != jailList.end(); ++i)
-		if (i->trim() == levelName) return true;
+	for (auto & i : jailList)
+		if (i.trim() == levelName) return true;
 
 	CString message = pPacket.readString(pPacket.readGUChar());
 
@@ -2453,10 +2442,9 @@ bool TPlayer::msgPLI_TOALL(CString& pPacket)
 	}
 
 	std::vector<TPlayer*>* playerList = server->getPlayerList();
-	for (std::vector<TPlayer*>::iterator i = playerList->begin(); i != playerList->end(); ++i)
+	for (auto player : *playerList)
 	{
-		TPlayer* player = *i;
-		if (player == this) continue;
+			if (player == this) continue;
 
 		// See if the player is allowing toalls.
 		unsigned char flags = strtoint(player->getProp(PLPROP_ADDITFLAGS));
@@ -2506,7 +2494,7 @@ bool TPlayer::msgPLI_FIRESPY(CString& pPacket)
 bool TPlayer::msgPLI_THROWCARRIED(CString& pPacket)
 {
 	// TODO: Remove when an npcserver is created.
-	if (server->getSettings()->getBool("duplicatecanbecarried", false) == false)
+	if ( !server->getSettings()->getBool("duplicatecanbecarried", false))
 	{
 		TNPC* npc = 0;
 		if (carryNpcId != 0) npc = server->getNPC(carryNpcId);
@@ -2610,7 +2598,7 @@ bool TPlayer::msgPLI_CLAIMPKER(CString& pPacket)
 		CSettings* settings = server->getSettings();
 
 		// Give a kill to the player who killed me.
-		if (settings->getBool("dontchangekills", false) == false)
+		if ( !settings->getBool("dontchangekills", false))
 			player->setKills(player->getProp(PLPROP_KILLSCOUNT).readGInt() + 1);
 
 		// Now, adjust their AP if allowed.
@@ -2716,7 +2704,7 @@ bool TPlayer::msgPLI_FLAGSET(CString& pPacket)
 		if (flagName == "gr.fileerror" || flagName == "gr.filedata")
 			return true;
 
-		if (settings->getBool("flaghack_movement", true) == true)
+		if ( settings->getBool("flaghack_movement", true))
 		{
 			// gr.x and gr.y are used by the -gr_movement NPC to help facilitate smoother
 			// movement amongst pre-2.3 clients.
@@ -2801,9 +2789,8 @@ bool TPlayer::msgPLI_OPENCHEST(CString& pPacket)
 	unsigned char cY = pPacket.readGUChar();
 	std::vector<TLevelChest *>* levelChests = level->getLevelChests();
 
-	for (std::vector<TLevelChest*>::iterator i = levelChests->begin(); i != levelChests->end(); ++i)
+	for (auto chest : *levelChests)
 	{
-		TLevelChest* chest = *i;
 		if (chest->getX() == cX && chest->getY() == cY)
 		{
 			if (!hasChest(chest))
@@ -2832,7 +2819,7 @@ bool TPlayer::msgPLI_PUTNPC(CString& pPacket)
 	float loc[2] = {(float)pPacket.readGUChar() / 2.0f, (float)pPacket.readGUChar() / 2.0f};
 
 	// See if putnpc is allowed.
-	if (settings->getBool("putnpcenabled") == false)
+	if ( !settings->getBool("putnpcenabled"))
 		return true;
 
 	// Load the code.
@@ -2909,7 +2896,7 @@ bool TPlayer::msgPLI_HURTPLAYER(CString& pPacket)
 bool TPlayer::msgPLI_EXPLOSION(CString& pPacket)
 {
 	CSettings* settings = server->getSettings();
-	if (settings->getBool("noexplosions", false) == true) return true;
+	if ( settings->getBool("noexplosions", false)) return true;
 
 	unsigned char eradius = pPacket.readGUChar();
 	float loc[2] = {(float)pPacket.readGUChar() / 2.0f, (float)pPacket.readGUChar() / 2.0f};
@@ -2937,9 +2924,9 @@ bool TPlayer::msgPLI_PRIVATEMESSAGE(CString& pPacket)
 	// Check if the player is in a jailed level.
 	std::vector<CString> jailList = server->getSettings()->getStr("jaillevels").tokenize(",");
 	bool jailed = false;
-	for (std::vector<CString>::iterator i = jailList.begin(); i != jailList.end(); ++i)
+	for (auto & i : jailList)
 	{
-		if (i->trim() == levelName)
+		if (i.trim() == levelName)
 		{
 			jailed = true;
 			break;
@@ -2984,11 +2971,11 @@ bool TPlayer::msgPLI_PRIVATEMESSAGE(CString& pPacket)
 	pmMessage.gtokenizeI();
 
 	// Send the message out.
-	for (std::vector<unsigned short>::iterator i = pmPlayers.begin(); i != pmPlayers.end(); ++i)
+	for (unsigned short & i : pmPlayers)
 	{
-		if (*i >= 16000)
+		if (i >= 16000)
 		{
-			TPlayer* pmPlayer = getExternalPlayer(*i);
+			TPlayer* pmPlayer = getExternalPlayer(i);
 			serverlog.out("Sending PM to global player: %s.\n", pmPlayer->getNickname().text());
 			pmMessage.guntokenizeI();
 			pmExternalPlayer(pmPlayer->getServerName(),pmPlayer->getAccountName(),pmMessage);
@@ -2996,7 +2983,7 @@ bool TPlayer::msgPLI_PRIVATEMESSAGE(CString& pPacket)
 		}
 		else
 		{
-			TPlayer* pmPlayer = server->getPlayer(*i, PLTYPE_ANYPLAYER | PLTYPE_NPCSERVER);
+			TPlayer* pmPlayer = server->getPlayer(i, PLTYPE_ANYPLAYER | PLTYPE_NPCSERVER);
 			if (pmPlayer == 0 || pmPlayer == this) continue;
 
 #ifdef V8NPCSERVER
@@ -3029,7 +3016,7 @@ bool TPlayer::msgPLI_PRIVATEMESSAGE(CString& pPacket)
 bool TPlayer::msgPLI_NPCWEAPONDEL(CString& pPacket)
 {
 	CString weapon = pPacket.readString("");
-	for (std::vector<CString>::iterator i = weaponList.begin(); i != weaponList.end(); )
+	for (auto i = weaponList.begin(); i != weaponList.end(); )
 	{
 		if (*i == weapon)
 		{
@@ -3125,9 +3112,9 @@ bool TPlayer::msgPLI_UPDATEFILE(CString& pPacket)
 
 	// Make sure it isn't one of the default files.
 	bool isDefault = false;
-	for (unsigned int i = 0; i < sizeof(__defaultfiles) / sizeof(char*); ++i)
+	for (auto & __defaultfile : __defaultfiles)
 	{
-		if (file.match(CString(__defaultfiles[i])) == true)
+		if (file.match(CString(__defaultfile)))
 		{
 			isDefault = true;
 			break;
@@ -3136,7 +3123,7 @@ bool TPlayer::msgPLI_UPDATEFILE(CString& pPacket)
 
 	// If the file on disk is different, send it to the player.
 	file.setRead(0);
-	if (isDefault == false && fModTime > modTime)
+	if ( !isDefault && fModTime > modTime)
 		return msgPLI_WANTFILE(file);
 
 	if (versionID < CLVER_2_1)
@@ -3156,7 +3143,7 @@ bool TPlayer::msgPLI_ADJACENTLEVEL(CString& pPacket)
 		return true;
 
 	bool alreadyVisited = false;
-	for (std::vector<SCachedLevel*>::const_iterator i = cachedLevels.begin(); i != cachedLevels.end(); ++i)
+	for (auto i = cachedLevels.begin(); i != cachedLevels.end(); ++i)
 	{
 		SCachedLevel* cl = *i;
 		if (cl->level == adjacentLevel)
@@ -3218,14 +3205,14 @@ bool TPlayer::msgPLI_TRIGGERACTION(CString& pPacket)
 	// (int)(loc[0]) % 64 == 0.0f, for gmap?
 	if (loc[0] == 0.0f && loc[1] == 0.0f)
 	{
-		if (settings->getBool("triggerhack_weapons", false) == true)
+		if ( settings->getBool("triggerhack_weapons", false))
 		{
 			if (action.find("gr.addweapon") == 0)
 			{
 				std::vector<CString> actionParts = action.tokenize(",");
 				if (actionParts.size() != 1)
 				{
-					std::vector<CString>::iterator i = actionParts.begin();
+					auto i = actionParts.begin();
 					for (++i; i != actionParts.end(); ++i)
 						this->addWeapon(i->trim());
 				}
@@ -3236,7 +3223,7 @@ bool TPlayer::msgPLI_TRIGGERACTION(CString& pPacket)
 				std::vector<CString> actionParts = action.tokenize(",");
 				if (actionParts.size() != 1)
 				{
-					std::vector<CString>::iterator i = actionParts.begin();
+					auto i = actionParts.begin();
 					for (++i; i != actionParts.end(); ++i)
 						this->deleteWeapon(i->trim());
 				}
@@ -3244,7 +3231,7 @@ bool TPlayer::msgPLI_TRIGGERACTION(CString& pPacket)
 			}
 		}
 
-		if (settings->getBool("triggerhack_execscript", false) == true)
+		if ( settings->getBool("triggerhack_execscript", false))
 		{
 			if (action.find("gr.es_clear") == 0)
 			{
@@ -3331,7 +3318,7 @@ bool TPlayer::msgPLI_TRIGGERACTION(CString& pPacket)
 			}
 		}
 
-		if (settings->getBool("triggerhack_guilds", false) == true)
+		if ( settings->getBool("triggerhack_guilds", false))
 		{
 			if (action.find("gr.addguildmember") == 0)
 			{
@@ -3440,7 +3427,7 @@ bool TPlayer::msgPLI_TRIGGERACTION(CString& pPacket)
 			}
 		}
 
-		if (settings->getBool("triggerhack_groups", true) == true)
+		if ( settings->getBool("triggerhack_groups", true))
 		{
 			if (action.find("gr.setgroup") == 0)
 			{
@@ -3455,10 +3442,9 @@ bool TPlayer::msgPLI_TRIGGERACTION(CString& pPacket)
 				if (actionParts.size() == 2)
 				{
 					std::vector<TPlayer*>* playerList = level->getPlayerList();
-					for (std::vector<TPlayer*>::iterator i = playerList->begin(); i != playerList->end(); ++i)
+					for (auto player : *playerList)
 					{
-						TPlayer* player = *i;
-						player->setGroup(actionParts[1]);
+							player->setGroup(actionParts[1]);
 					}
 				}
 				return true;
@@ -3474,7 +3460,7 @@ bool TPlayer::msgPLI_TRIGGERACTION(CString& pPacket)
 			}
 		}
 
-		if (settings->getBool("triggerhack_files", false) == true)
+		if ( settings->getBool("triggerhack_files", false))
 		{
 			if  (action.find("gr.appendfile") == 0)
 			{
@@ -3558,7 +3544,7 @@ bool TPlayer::msgPLI_TRIGGERACTION(CString& pPacket)
 			}
 		}
 
-		if (settings->getBool("triggerhack_rc", false) == true)
+		if ( settings->getBool("triggerhack_rc", false))
 		{
 			if (action.find("gr.rcchat") == 0)
 			{
@@ -3572,7 +3558,7 @@ bool TPlayer::msgPLI_TRIGGERACTION(CString& pPacket)
 			}
 		}
 
-		if (settings->getBool("triggerhack_props", false) == true)
+		if ( settings->getBool("triggerhack_props", false))
 		{
 			if (action.find("gr.attr") == 0)
 			{
@@ -3600,7 +3586,7 @@ bool TPlayer::msgPLI_TRIGGERACTION(CString& pPacket)
 			}
 		}
 
-		if (settings->getBool("triggerhack_levels", false) == true)
+		if ( settings->getBool("triggerhack_levels", false))
 		{
 			if (action.find("gr.updatelevel") == 0)
 			{
@@ -3897,7 +3883,7 @@ bool TPlayer::addPMServer(CString& option)
 	TServerList* list = server->getServerList();
 
 	bool PMSrvExist = false;
-	for (std::vector<CString>::const_iterator ij = PMServerList.begin(); ij != PMServerList.end(); ++ij)
+	for (auto ij = PMServerList.begin(); ij != PMServerList.end(); ++ij)
 	{
 		if ((ij)->text() == option)
 		{
@@ -3918,13 +3904,13 @@ bool TPlayer::addPMServer(CString& option)
 
 bool TPlayer::remPMServer(CString& option)
 {
-	if (PMServerList.size() == 0)
+	if (PMServerList.empty())
 		return true;
 
-	if (externalPlayerList.size() != 0)
+	if (!externalPlayerList.empty())
 	{
 		// Check if a player has disconnected
-		for (std::vector<TPlayer*>::iterator ij = externalPlayerList.begin(); ij != externalPlayerList.end();)
+		for (auto ij = externalPlayerList.begin(); ij != externalPlayerList.end();)
 		{
 			TPlayer* p = *ij;
 
@@ -3941,7 +3927,7 @@ bool TPlayer::remPMServer(CString& option)
 	}
 
 	// Find the player and remove him.
-	for (std::vector<CString>::iterator ip = PMServerList.begin(); ip != PMServerList.end(); )
+	for (auto ip = PMServerList.begin(); ip != PMServerList.end(); )
 	{
 		//CString pl = i;
 		if ((ip)->text() == option)
@@ -3961,14 +3947,14 @@ bool TPlayer::updatePMPlayers(CString& servername, CString& players)
 	std::vector<CString> players2 = players.tokenize("\n");
 	int i22 = 0;
 
-	if (externalPlayerList.size() != 0)
+	if (!externalPlayerList.empty())
 	{
 		// Check if a player has disconnected
-		for (std::vector<TPlayer*>::iterator ij = externalPlayerList.begin(); ij != externalPlayerList.end();)
+		for (auto ij = externalPlayerList.begin(); ij != externalPlayerList.end();)
 		{
 			TPlayer* p = *ij;
 			bool exist2 = false;
-			for (std::vector<CString>::const_iterator i = players2.begin(); i != players2.end(); ++i)
+			for (auto i = players2.begin(); i != players2.end(); ++i)
 			{
 				CString tmpPlyr = (i)->guntokenize();
 				CString account = tmpPlyr.readString("\n");
@@ -3998,16 +3984,16 @@ bool TPlayer::updatePMPlayers(CString& servername, CString& players)
 		}
 	}
 
-	for (std::vector<CString>::const_iterator i = players2.begin(); i != players2.end(); ++i)
+	for (auto i = players2.begin(); i != players2.end(); ++i)
 	{
 		CString tmpPlyr = (i)->guntokenize();
 		CString account = tmpPlyr.readString("\n");
 		CString nick = tmpPlyr.readString("\n");
 
 		bool exist = false;
-		if (externalPlayerList.size() != 0)
+		if (!externalPlayerList.empty())
 		{
-			for (std::vector<TPlayer*>::iterator ij = externalPlayerList.begin(); ij != externalPlayerList.end();)
+			for (auto ij = externalPlayerList.begin(); ij != externalPlayerList.end();)
 			{
 				TPlayer* p = *ij;
 				if (servername == p->getServerName() && account == p->getAccountName())
@@ -4038,7 +4024,7 @@ bool TPlayer::updatePMPlayers(CString& servername, CString& players)
 				externalPlayerIds.push_back(0);
 			}
 
-			TPlayer* tmpPlyr2 = new TPlayer(server, 0, newId);
+			auto* tmpPlyr2 = new TPlayer(server, 0, newId);
 			externalPlayerIds[newId] = tmpPlyr2;
 			tmpPlyr2->loadAccount(account);
 			tmpPlyr2->setAccountName(account);
@@ -4052,9 +4038,9 @@ bool TPlayer::updatePMPlayers(CString& servername, CString& players)
 		}
 	}
 
-	if (externalPlayerList.size() != 0)
+	if (!externalPlayerList.empty())
 	{
-		for (std::vector<TPlayer *>::iterator ij = externalPlayerList.begin(); ij != externalPlayerList.end();)
+		for (auto ij = externalPlayerList.begin(); ij != externalPlayerList.end();)
 		{
 			sendPacket((*ij)->getProps(__getLogin,83));
 			//serverlog.out("Test: %s\n",(*ij)->getProps(__getLogin,83));
@@ -4081,9 +4067,9 @@ TPlayer* TPlayer::getExternalPlayer(const unsigned short id, bool includeRC) con
 
 TPlayer* TPlayer::getExternalPlayer(const CString& account, bool includeRC) const
 {
-	for (std::vector<TPlayer *>::const_iterator i = externalPlayerList.begin(); i != externalPlayerList.end(); ++i)
+	for (auto i : externalPlayerList)
 	{
-		TPlayer *player = (TPlayer*)*i;
+		TPlayer *player = (TPlayer*)i;
 		if (player == 0)
 			continue;
 

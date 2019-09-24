@@ -50,7 +50,7 @@ TNPC::TNPC(const CString& pImage, const CString& pScript, float pX, float pY, TS
 	}
 
 	// TODO: Create plugin hook so NPCServer can acquire/format code.
-	
+
 	// Needs to be called so it creates a script-object
 	//if (!pScript.isEmpty())
 		setScriptCode(pScript);
@@ -155,10 +155,10 @@ void TNPC::setScriptCode(const CString& pScript)
 		clientScriptFormatted = removeComments(clientScript, "\n");
 		std::vector<CString> code = clientScriptFormatted.tokenize("\n");
 		clientScriptFormatted.clear();
-		for (std::vector<CString>::iterator i = code.begin(); i != code.end(); ++i)
-			clientScriptFormatted << (*i).trim() << "\xa7";
+		for (auto & i : code)
+			clientScriptFormatted << i.trim() << "\xa7";
 	}
-	
+
 	// Search for toweapons in the clientside code and extract the name of the weapon.
 	weaponName = toWeaponName(clientScript);
 
@@ -631,7 +631,7 @@ CString TNPC::setProps(CString& pProps, int clientVersion, bool pForward)
 				// If the first bit is 1, our position is negative.
 				x2 >>= 1;
 				if ((short)len & 0x0001) x2 = -x2;
-				
+
 				// Let pre-2.3+ clients see 2.3+ movement.
 				x = (float)x2 / 16.0f;
 
@@ -788,8 +788,8 @@ void TNPC::freeScriptResources()
 	}
 
 	// Clear triggeraction functions
-	for (auto it = _triggerActions.begin(); it != _triggerActions.end(); ++it)
-		delete it->second;
+	for (auto & _triggerAction : _triggerActions)
+		delete _triggerAction.second;
 	_triggerActions.clear();
 
 	// Delete script object
@@ -838,8 +838,8 @@ void TNPC::addClassCode(const std::string & className, const std::string & class
 	clientScript = script.readString("");
 
 	// Iterate current classes, and add to end of code
-	for (auto it = classMap.begin(); it != classMap.end(); ++it)
-		clientScript << "\n" << (*it).second;
+	for (auto & it : classMap)
+		clientScript << "\n" << it.second;
 
 	// Remove comments and trim the code if specified.
 	if (!clientScript.isEmpty())
@@ -847,8 +847,8 @@ void TNPC::addClassCode(const std::string & className, const std::string & class
 		clientScriptFormatted = removeComments(clientScript, "\n");
 		std::vector<CString> code = clientScriptFormatted.tokenize("\n");
 		clientScriptFormatted.clear();
-		for (std::vector<CString>::iterator i = code.begin(); i != code.end(); ++i)
-			clientScriptFormatted << (*i).trim() << "\xa7";
+		for (auto & i : code)
+			clientScriptFormatted << i.trim() << "\xa7";
 	}
 
 	// Just a little warning for people who don't know.
@@ -882,7 +882,7 @@ void TNPC::queueNpcAction(const std::string& action, TPlayer *player, bool regis
 		if (playerObject != 0)
 			scriptAction = scriptEngine->CreateAction(action, _scriptObject, playerObject);
 	}
-	
+
 	if (!scriptAction)
 		scriptAction = scriptEngine->CreateAction(action, _scriptObject);
 
@@ -916,7 +916,7 @@ bool TNPC::runScriptEvents()
 	{
 		if (canWarp)
 			testTouch();
-		
+
 		time_t newModTime = time(0);
 
 		CString propPacket = CString() >> (char)PLO_NPCPROPS >> (int)id;
@@ -990,10 +990,9 @@ CString TNPC::getVariableDump()
 	if (!npcScripter.isEmpty()) npcDump << npcNameStr << ".scripter: " << npcScripter << "\n";
 	if (level) npcDump << npcNameStr << ".level: " << level->getLevelName() << "\n";
 
-	npcDump << "\nAttributes:\n";	
-	for (int i = 0; i < propsCount; i++)
+	npcDump << "\nAttributes:\n";
+	for (int propId : propList)
 	{
-		int propId = propList[i];
 		CString prop = getProp(propId);
 		switch (propId)
 		{
@@ -1312,7 +1311,7 @@ void TNPC::saveNPC()
 			 << CString((int)saves[3]) << "," << CString((int)saves[4]) << "," << CString((int)saves[5]) << ","
 			 << CString((int)saves[6]) << "," << CString((int)saves[7]) << "," << CString((int)saves[8]) << ","
 			 << CString((int)saves[9]) << NL;
-	
+
 	for (int i = 0; i < 30; i++)
 	{
 		if (!gAttribs[i].isEmpty())
@@ -1324,7 +1323,7 @@ void TNPC::saveNPC()
 
 	fileData << "NPCSCRIPT" << NL << originalScript.replaceAll("\n", NL);
 	if (originalScript[originalScript.length() - 1] != '\n')
-		fileData << NL; 
+		fileData << NL;
 	fileData << "NPCSCRIPTEND" << NL;
 	fileData.save(fileName);
 }
@@ -1525,10 +1524,10 @@ CString doJoins(const CString& code, CFileSystem* fs)
 	}
 
 	// Add the files now.
-	for (std::vector<CString>::iterator i = joinList.begin(); i != joinList.end(); ++i)
+	for (auto & i : joinList)
 	{
 		//printf("file: %s\n", (*i).text());
-		c = fs->load(*i);
+		c = fs->load(i);
 		c.removeAllI("\r");
 		c.replaceAllI("\n", "\xa7");
 		ret << c;
