@@ -15,14 +15,16 @@ class TImage
 
 		CString name, real;
 
-		bool countChange(int pCount);
-		bool loadTexture(CString pImage);
+	bool loadTexture(CString pImage);
 		inline void render(int pX, int pY);
 		inline void render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pHeight, int alpha);
 		inline void render(int pX, int pY, float r, float g, float b, float a);
 		void render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pHeight, float r, float g, float b, float a);
 
 		static TImage *find(std::string pName, TServer * theServer);
+
+		int getWidth() const { return width; }
+		int getHeight() const { return height; }
 
 	private:
 		bool loaded;

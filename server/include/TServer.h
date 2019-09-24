@@ -25,6 +25,8 @@
 #include "CWordFilter.h"
 #include "TServerList.h"
 #include "TImage.h"
+#include "TGameWindow.h"
+
 
 #ifdef UPNP
 #include "CUPNP.h"
@@ -39,6 +41,7 @@ class TLevel;
 class TNPC;
 class TMap;
 class TWeapon;
+class TGameWindow;
 
 extern std::atomic_bool shutdownProgram;
 const static int FRAMES_PER_SECOND = 60;
@@ -68,15 +71,9 @@ enum
 class TServer : public CSocketStub
 {
 	public:
-		SDL_Window *screen;
-		SDL_Texture *pics1;
-		SDL_Renderer *renderer;
+		TGameWindow *gameWindow;
 
 		TPlayer *localPlayer;
-		void keyPressed(SDL_Keysym *keysym);
-		void keyReleased(SDL_Keysym *keysym);
-
-		SDL_Texture* loadTexture( std::string path );
 
 		// Required by CSocketStub.
 		bool onRecv();
@@ -261,7 +258,7 @@ class TServer : public CSocketStub
 		std::set<TPlayer *> deletedPlayers;
 
 		TServerList serverlist;
-		std::chrono::high_resolution_clock::time_point lastTimer, startTimer, lastNWTimer, last1mTimer, last5mTimer, last3mTimer;
+		std::chrono::high_resolution_clock::time_point lastTimer, lastNWTimer, last1mTimer, last5mTimer, last3mTimer;
 #ifdef V8NPCSERVER
 		std::chrono::high_resolution_clock::time_point lastScriptTimer;
 		std::chrono::nanoseconds accumulator;
@@ -277,13 +274,6 @@ class TServer : public CSocketStub
 		std::thread upnp_thread;
 #endif
 
-	void SDLEvents();
-
-	void GaniDraw(CGaniObjectStub * player, const CString &animation, int x, int y, int dir, float time);
-
-	void ChangeSurfaceSize();
-
-	void DrawScreen();
 };
 
 inline TNPC * TServer::getNPC(const unsigned int id) const

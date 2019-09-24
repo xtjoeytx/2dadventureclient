@@ -14,7 +14,7 @@
 #include "TNPC.h"
 #include "TMap.h"
 #include "TLevel.h"
-#include "TGameScreen.h"
+#include "TGameWindow.h"
 
 static const char* const filesystemTypes[] =
 {
@@ -37,7 +37,7 @@ static const Uint32 amask = 0x000000ff;
 #endif
 
 TServer::TServer(CString pName)
-	: running(false), doRestart(false), name(pName), wordFilter(this)
+	: running(false), doRestart(false), name(pName), wordFilter(this), gameWindow(new TGameWindow(this))
 #ifdef V8NPCSERVER
 	, mScriptEngine(this), mPmHandlerNpc(nullptr)
 #endif
@@ -46,7 +46,7 @@ TServer::TServer(CString pName)
 #endif
 {
 	auto time_now = std::chrono::high_resolution_clock::now();
-	lastTimer = startTimer = lastNWTimer = last1mTimer = last5mTimer = last3mTimer = time_now;
+	lastTimer = lastNWTimer = last1mTimer = last5mTimer = last3mTimer = time_now;
 #ifdef V8NPCSERVER
 	lastScriptTimer = time_now;
 	accumulator = std::chrono::nanoseconds(0);
@@ -101,12 +101,6 @@ int TServer::init(const CString& serverip, const CString& serverport, const CStr
 	npcIds.resize(10001); // Starting npc ids at 10,000 for now on..
 
 	fps.start();
-
-	ChangeSurfaceSize();
-	//SDL_EnableKeyRepeat(1,15);
-
-	//SDL_WM_SetCaption("GS2Emu", nullptr);
-	SDL_SetWindowTitle(screen,"GS2Emu");
 
 	for (auto & file : *filesystem[0].getFileList()) {
 
@@ -221,10 +215,7 @@ int TServer::init(const CString& serverip, const CString& serverport, const CStr
 	sockManager.registerSocket((CSocketStub*)this);
 	sockManager.registerSocket((CSocketStub*)&serverlist);
 
-	auto pics1Path = filesystem->find("pics1.png");
-	serverlog.out("[Pics1Path]\t%s\n", pics1Path.text());
-	pics1 = loadTexture(pics1Path.text());
-
+	gameWindow->init();
 	return 0;
 }
 
@@ -446,9 +437,8 @@ bool TServer::doMain()
 		doTimedEvents();
 	}
 
-	SDLEvents();
-
-	DrawScreen();
+	if (gameWindow != nullptr)
+		gameWindow->doMain();
 
 	return true;
 }
