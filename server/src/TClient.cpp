@@ -124,24 +124,21 @@ int TClient::init(
 	setUpLocalPlayer();
 
 	gameWindow->init();
-/*
-	for (auto & file : *filesystem[0].getFileList()) {
-		if (file.first.find(".gani"))
-			TAnimation::find(file.first.text(), this);
-	}
-*/
+
 	clientLog.out("Loading images:\n");
 
 	for (auto & file : *filesystem[0].getFileList()) {
-		//if (file.first.find(".gani"))
-		//	TAnimation::find(file.first.text(), this);
-
 		if (file.first.find(".gif") > 0 || file.first.find(".png") > 0 || file.first.find(".jpg") > 0) {
 			clientLog.out("\t%s\n", file.first.text());
 			gameWindow->drawText(file.first.text());
 
 			TImage::find(file.first.text(), this, true);
 		}
+	}
+
+	for (auto & file : *filesystem[0].getFileList()) {
+		if (file.first.find(".gani"))
+			TAnimation::find(file.first.text(), this);
 	}
 
 #ifndef __AMIGA__

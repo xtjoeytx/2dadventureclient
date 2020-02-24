@@ -23,9 +23,9 @@ class TAnimationSprite
 class TAnimationAni
 {
 	public:
-		TAnimationAni(TAnimationSprite *pImg, int pX, int pY);
+		TAnimationAni(TAnimationSprite *pImg, float pX, float pY);
 
-		int x, y;
+		float x, y;
 
 		TAnimationSprite *img;
 

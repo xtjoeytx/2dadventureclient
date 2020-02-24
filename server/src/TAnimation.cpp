@@ -94,7 +94,7 @@ bool TAnimation::load()
 		else if (aniStarted) {
 			if(line != "ANIEND")
 			{
-				if (line.find("PLAYSOUND") == 0)
+				if (line.find("PLAYSOUND") >= 0)
 					continue;
 				if (line.find("WAIT") == 0)
 					continue;
@@ -103,10 +103,11 @@ bool TAnimation::load()
 				int k = 0;
 				for (int i=0; i < words.size(); i++)
 				{
-					int sprite, x, y;
+					int sprite;
+					float x, y;
 					sprite = atoi(words[i].text()); i++;
-					x      = atoi(words[i].text()); i++;
-					y      = atoi(words[i].text());
+					x      = atof(words[i].text()); i++;
+					y      = atof(words[i].text());
 					anis.emplace(k, new TAnimationAni(animationSpriteList[sprite], x, y));
 					k++;
 				}
@@ -230,7 +231,7 @@ void TAnimationSprite::render(CGaniObjectStub * player, TClient * server, int pX
 	image->render(pX, pY, x, y, w, h, alpha);
 }
 
-TAnimationAni::TAnimationAni(TAnimationSprite *pImg, int pX, int pY)
+TAnimationAni::TAnimationAni(TAnimationSprite *pImg, float pX, float pY)
 {
 	img = pImg;
 	x = pX;
@@ -241,7 +242,6 @@ void TAnimationAni::render(CGaniObjectStub * player, TClient * server, int pX, i
 {
 	if (img == nullptr)
 		return;
-
 
 	img->render(player, server, pX + x, pY + y);
 }
