@@ -78,7 +78,13 @@ bool TAnimation::load()
 		}
 		else if (words[0] == "SPRITE")
 		{
-			auto sprite = new TAnimationSprite(atoi(words[1].text()), words[2].text(), atoi(words[3].text()), atoi(words[4].text()), atoi(words[5].text()), atoi(words[6].text()), words[7].text());
+			TAnimationSprite *sprite;
+			const char* desc = "";
+			if (words.size() >= 8)
+				desc = words[7].text();
+
+			sprite = new TAnimationSprite(atoi(words[1].text()), words[2].text(), atoi(words[3].text()), atoi(words[4].text()), atoi(words[5].text()), atoi(words[6].text()), desc);
+
 			animationSpriteList.emplace(atoi(words[1].text()), sprite);
 		}
 		else if (words[0] == "ANI" && words.size() == 1)

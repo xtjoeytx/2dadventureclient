@@ -52,6 +52,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
 if(NOT AMIGA)
 	set(SDL2 TRUE)
+else()
+	set(NONET TRUE)
 endif()
 
 # Version number in format X.YY.ZZ
