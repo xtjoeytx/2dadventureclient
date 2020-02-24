@@ -78,7 +78,8 @@ bool TAnimation::load()
 		}
 		else if (words[0] == "SPRITE")
 		{
-			animationSpriteList.emplace(atoi(words[1].text()), new TAnimationSprite(atoi(words[1].text()), words[2].text(), atoi(words[3].text()), atoi(words[4].text()), atoi(words[5].text()), atoi(words[6].text()), words[7].text()));
+			auto sprite = new TAnimationSprite(atoi(words[1].text()), words[2].text(), atoi(words[3].text()), atoi(words[4].text()), atoi(words[5].text()), atoi(words[6].text()), words[7].text());
+			animationSpriteList.emplace(atoi(words[1].text()), sprite);
 		}
 		else if (words[0] == "ANI" && words.size() == 1)
 		{
