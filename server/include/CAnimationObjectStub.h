@@ -9,7 +9,7 @@
 #include "TLevel.h"
 
 
-class CGaniObjectStub {
+class CAnimationObjectStub {
 public:
 	virtual float getX() const = 0;
 

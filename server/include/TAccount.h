@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include "CString.h"
 #include "TLevelChest.h"
-#include "CGaniObjectStub.h"
+#include "CAnimationObjectStub.h"
 
 enum
 {
@@ -125,7 +125,7 @@ enum
 #define propscount	83
 
 class TClient;
-class TAccount : public CGaniObjectStub
+class TAccount : public CAnimationObjectStub
 {
 	public:
 		// Constructor - Deconstructor

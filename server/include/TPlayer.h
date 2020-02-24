@@ -15,7 +15,7 @@
 #ifdef V8NPCSERVER
 #include "ScriptBindings.h"
 #endif
-#include "CGaniObjectStub.h"
+#include "CAnimationObjectStub.h"
 
 class TLevel;
 class TClient;

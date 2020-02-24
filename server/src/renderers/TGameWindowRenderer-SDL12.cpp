@@ -1,26 +1,23 @@
 #include "TGameWindow.h"
 
 void TGameWindow::createRenderer() {
-	screen = SDL_SetVideoMode(screenWidth, screenHeight, SDL_SWSURFACE | SDL_RESIZABLE);
+	screen = SDL_SetVideoMode(screenWidth, screenHeight, 0, SDL_SWSURFACE | SDL_RESIZABLE);
 
 	SDL_WM_SetCaption(GSERVER_APPNAME " v" GSERVER_VERSION, nullptr);
-
-	renderClear();
-	renderPresent( );
 }
 
 void TGameWindow::renderToggleFullscreen() {
-	SDL_WM_ToggleFullscreen(screen);
+	SDL_WM_ToggleFullScreen(screen);
 }
 
-void TGameWindow::renderChangeSurfaceSize(SDL_Event * event) {
+void TGameWindow::renderChangeSurfaceSize() {
 	SDL_FreeSurface(screen);
-	screenWidth = event->resize.w;
-	screenHeight = event->resize.h;
+	screenWidth = event.resize.w;
+	screenHeight = event.resize.h;
 	createRenderer();
 }
 
-void TGameWindow::renderBlit(GameTexture * texture, const SDL_Rect * srcrect, const SDL_Rect * dstrect) {
+void TGameWindow::renderBlit(GameTexture * texture, SDL_Rect * srcrect, SDL_Rect * dstrect) {
 	SDL_BlitSurface(texture, srcrect, screen, dstrect);
 }
 
@@ -33,7 +30,7 @@ GameTexture * TGameWindow::renderLoadImage(const char *file) {
 	GameTexture* newTexture = IMG_Load(file);
 
 	if( newTexture == nullptr ) {
-		client->log( "Unable to create texture from %s! SDL Error: %s\n", file, SDL_ImageError() );
+		client->log( "Unable to create texture from %s! SDL Error: %s\n", file, SDL_GetError() );
 		return nullptr;
 	}
 
@@ -41,7 +38,7 @@ GameTexture * TGameWindow::renderLoadImage(const char *file) {
 }
 
 GameTexture * TGameWindow::renderText(TTF_Font *font, const char *text, SDL_Color fg) {
-	return TTF_RenderText_Blended(font, text, fg);
+	return TTF_RenderText_Solid(font, text, fg);
 }
 
 void TGameWindow::renderDestroyTexture(GameTexture * texture) {
@@ -49,8 +46,8 @@ void TGameWindow::renderDestroyTexture(GameTexture * texture) {
 }
 
 void TGameWindow::renderQueryTexture(GameTexture * texture, int *w, int *h) {
-	w = texture->w;
-	h = texture->h;
+	*w = texture->w;
+	*h = texture->h;
 }
 
 void TGameWindow::renderPresent() { SDL_Flip(screen); }

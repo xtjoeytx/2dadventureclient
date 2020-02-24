@@ -10,7 +10,7 @@
 #include <unordered_set>
 #include "ScriptBindings.h"
 #include "ScriptExecutionContext.h"
-#include "CGaniObjectStub.h"
+#include "CAnimationObjectStub.h"
 
 #endif
 
@@ -147,7 +147,7 @@ enum
 class TClient;
 class TLevel;
 class TPlayer;
-class TNPC : public CGaniObjectStub
+class TNPC : public CAnimationObjectStub
 {
 	public:
 		TNPC(TClient* pServer, bool pLevelNPC = false);

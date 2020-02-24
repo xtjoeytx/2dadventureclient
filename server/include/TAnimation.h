@@ -13,7 +13,7 @@ class TAnimationSprite
 		TAnimationSprite(int pSprite, std::string pImage, int pX, int pY, int pW, int pH, std::string desc);
 		~TAnimationSprite();
 
-		inline void render(CGaniObjectStub * player, TClient * server, int pX, int pY);
+		inline void render(CAnimationObjectStub * player, TClient * server, int pX, int pY);
 
 	private:
 		std::string img, description;
@@ -29,7 +29,7 @@ class TAnimationAni
 
 		TAnimationSprite *img;
 
-		inline void render(CGaniObjectStub * player, TClient * server, int pX, int pY);
+		inline void render(CAnimationObjectStub * player, TClient * server, int pX, int pY);
 };
 
 class TAnimation
@@ -42,7 +42,7 @@ class TAnimation
 		CString name, real;
 
 		bool load();
-		void render(CGaniObjectStub* player, TClient * server, int pX, int pY, int pDir, int *pStep, float time);
+		void render(CAnimationObjectStub* player, TClient * server, int pX, int pY, int pDir, int *pStep, float time);
 
 		static TAnimation *find(const char *pName, TClient * theServer);
 		TImage *findImage(char *pName, TClient * theServer);

@@ -15,16 +15,15 @@
 
 #if SDL_VERSION_ATLEAST(2,0,0)
 #define GameTexture SDL_Texture
-#define SDL_VIDEORESIZE SDL_LASTEVENT+1
+#define RENDER_RESIZE_EVENT event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED
 #else
 #define GameTexture SDL_Surface
+#define SDL_Keysym SDL_keysym
+#define RENDER_RESIZE_EVENT event.type == SDL_VIDEORESIZE
 #endif
 
-static std::map<Sint32, bool> keys;
-static TTF_Font *font;
-static int BUFFER;
-static Sint16 screenWidth = 640;
-static Sint16 screenHeight = 480;
+#define SCREEN_WIDTH 640
+#define SCREEN_HEIGHT 480
 
 class TImage;
 
@@ -39,42 +38,48 @@ public:
 
 	bool doMain();
 
-	TImage *tileset{};
-
-	void keyPressed(SDL_Keysym *keysym);
-
-	static void keyReleased(SDL_Keysym *keysym);
-
 	void drawText(const char *text);
 
-	void renderClear();
+	static void renderSetAlpha(GameTexture * texture, Uint8 alpha);
 
-	void renderPresent();
-
-	void renderBlit(GameTexture * texture, const SDL_Rect * srcrect, const SDL_Rect * dstrect);
+	static void renderDestroyTexture(GameTexture * texture);
 
 	static void renderQueryTexture(GameTexture * texture, int *w, int *h);
 
 	GameTexture * renderLoadImage(const char *file);
 
-	GameTexture * renderText(TTF_Font *font, const char *text, SDL_Color fg);
+	void renderBlit(GameTexture * texture, SDL_Rect * srcrect, SDL_Rect * dstrect);
 
-	static void renderSetAlpha(SDL_Texture * texture, Uint8 alpha);
+	void renderClear();
 
-	static void renderDestroyTexture(GameTexture * texture);
-
-	void renderToggleFullscreen();
-
-	void renderChangeSurfaceSize(SDL_Event * event);
 private:
+
 	TClient * client;
+	TImage *tileset{};
+
+	void keyPressed(SDL_Keysym * keysym);
+
+	void keyReleased(SDL_Keysym * keysym);
+
 	std::chrono::high_resolution_clock::time_point startTimer;
+	Sint16 screenWidth;
+	Sint16 screenHeight;
+	const static int FRAMES_PER_SECOND = 60;
+	SDL_Event event;
+	int frame = 0;
+	Timer fps;
 
-	void SDLEvents();
+	int prevY;
+	std::map<Sint32, bool> keys;
+	TTF_Font *font;
+	static int BUFFER;
 
-	void GaniDraw(CGaniObjectStub * player, int x, int y, float time);
+	void sdlEvents();
 
-	void DrawScreen();
+	void drawAnimation(CAnimationObjectStub * animationObject, int x, int y, float time);
+
+	void drawScreen();
+
 #if SDL_VERSION_ATLEAST(2,0,0)
 	SDL_Window *window{};
 	SDL_Renderer *renderer{};
@@ -84,6 +89,15 @@ private:
 
 	void createRenderer();
 
+	void renderPresent();
+
+	GameTexture * renderText(TTF_Font *font, const char *text, SDL_Color fg);
+
+	void renderToggleFullscreen();
+
+	void renderChangeSurfaceSize();
+
+	int fps_current;
 };
 
 #endif //GS2EMU_TGAMEWINDOW_H

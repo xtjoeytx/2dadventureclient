@@ -1,7 +1,7 @@
 #include "TGameWindow.h"
 
 void TGameWindow::createRenderer() {
-	window = SDL_CreateWindow(GSERVER_APPNAME " v" GSERVER_VERSION, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth, screenHeight, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+	window = SDL_CreateWindow(GSERVER_APPNAME " v" GSERVER_VERSION, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth, screenHeight, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE );
 
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -16,13 +16,14 @@ void TGameWindow::renderToggleFullscreen() {
 	//SDL_ShowCursor(IsFullscreen);
 }
 
-void TGameWindow::renderChangeSurfaceSize(SDL_Event * currentEvent) {
-	screenWidth = currentEvent->window.data1;
-	screenHeight = currentEvent->window.data2;
+void TGameWindow::renderChangeSurfaceSize() {
+	screenWidth = event.window.data1;
+	screenHeight = event.window.data2;
+	SDL_RenderPresent(renderer);
 	renderPresent();
 }
 
-void TGameWindow::renderBlit(GameTexture * texture, const SDL_Rect * srcrect, const SDL_Rect * dstrect) {
+void TGameWindow::renderBlit(GameTexture * texture, SDL_Rect * srcrect, SDL_Rect * dstrect) {
 	SDL_RenderCopy(renderer, texture, srcrect, dstrect);
 }
 
@@ -43,7 +44,7 @@ GameTexture * TGameWindow::renderLoadImage(const char *file) {
 }
 
 GameTexture * TGameWindow::renderText(TTF_Font * font, const char * text, SDL_Color fg) {
-	auto * surface = TTF_RenderText_Blended(font, text, fg);
+	auto * surface = TTF_RenderText_Solid(font, text, fg);
 
 	return SDL_CreateTextureFromSurface(renderer, surface);
 }

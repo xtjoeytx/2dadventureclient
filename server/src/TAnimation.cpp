@@ -4,7 +4,7 @@
 #include <SDL_image.h>
 #include <unordered_map>
 #include <TAccount.h>
-#include <CGaniObjectStub.h>
+#include <CAnimationObjectStub.h>
 #include "TAnimation.h"
 
 /* Animations */
@@ -124,7 +124,7 @@ bool TAnimation::load()
 	return true;
 }
 
-void TAnimation::render(CGaniObjectStub * player, TClient * server, int pX, int pY, int pDir, int *pStep, float time)
+void TAnimation::render(CAnimationObjectStub * player, TClient * server, int pX, int pY, int pDir, int *pStep, float time)
 {
 	if ( animationAniList.empty() )
 		return;
@@ -196,7 +196,7 @@ TAnimationSprite::~TAnimationSprite()
 
 }
 
-void TAnimationSprite::render(CGaniObjectStub * player, TClient * server, int pX, int pY)
+void TAnimationSprite::render(CAnimationObjectStub * player, TClient * server, int pX, int pY)
 {
 	TImage * image = nullptr;
 	std::string tmpImg;
@@ -237,7 +237,7 @@ TAnimationAni::TAnimationAni(TAnimationSprite *pImg, int pX, int pY)
 	y = pY;
 }
 
-void TAnimationAni::render(CGaniObjectStub * player, TClient * server, int pX, int pY)
+void TAnimationAni::render(CAnimationObjectStub * player, TClient * server, int pX, int pY)
 {
 	if (img == nullptr)
 		return;

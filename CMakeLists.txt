@@ -256,9 +256,21 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/dependencies/milkytracker/src/ppui)
 find_package(Threads REQUIRED)
 if (AMIGA)
 	find_package(SDL REQUIRED)
+	set(SDL2_LIBRARY ${SDL_LIBRARY})
+	set(SDL2_INCLUDE_DIR ${SDL_INCLUDE_DIR})
+
 	find_package(SDL_image REQUIRED)
+	set(SDL2_image_LIBRARY ${SDL_IMAGE_LIBRARY})
+	set(SDL2_image_INCLUDE_DIR ${SDL_IMAGE_INCLUDE_DIR})
+
 	find_package(SDL_mixer REQUIRED)
+	set(SDL2_mixer_LIBRARY ${SDL_MIXER_LIBRARY})
+	set(SDL2_mixer_INCLUDE_DIR ${SDL_MIXER_INCLUDE_DIR})
+
 	find_package(SDL_ttf REQUIRED)
+	set(SDL2_ttf_LIBRARY ${SDL_TTF_LIBRARY})
+	set(SDL2_ttf_INCLUDE_DIR ${SDL_TTF_INCLUDE_DIR})
+
 	find_package(Freetype REQUIRED)
 else()
 	find_package(SDL2 REQUIRED)

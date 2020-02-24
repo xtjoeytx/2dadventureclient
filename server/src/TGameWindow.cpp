@@ -34,6 +34,8 @@ static const Uint32 amask = 0xff000000;
 Uint32 lastTick;
 
 TGameWindow::TGameWindow(TClient* server) : client(server), tileset(nullptr) {
+	screenWidth = SCREEN_WIDTH;
+	screenHeight = SCREEN_HEIGHT;
 	createRenderer();
 
 	startTimer = std::chrono::high_resolution_clock::now();
@@ -57,7 +59,7 @@ void TGameWindow::init() {
 
 	atexit(TTF_Quit); /* remember to quit SDL_ttf */
 
-	font=TTF_OpenFont("8-bit-pusab.ttf", 20);
+	font=TTF_OpenFont("8-bit-pusab.ttf", 15);
 
 	if(!font)
 	{
@@ -89,9 +91,9 @@ void TGameWindow::init() {
 }
 
 bool TGameWindow::doMain() {
-	SDLEvents();
+	sdlEvents();
 
-	DrawScreen();
+	drawScreen();
 
 	return true;
 }
@@ -122,7 +124,9 @@ void TGameWindow::keyReleased(SDL_Keysym *keysym) {
 	}
 }
 
-void TGameWindow::DrawScreen() {
+void TGameWindow::drawScreen() {
+	fps.start();
+
 	Uint32 curTick = SDL_GetTicks();
 	auto currentTimer = std::chrono::high_resolution_clock::now();
 	typedef std::chrono::duration<float> timeDiff;
@@ -167,7 +171,7 @@ void TGameWindow::DrawScreen() {
 		if (map)
 			mapLevels = map->getLevels();
 
-		std::vector<CGaniObjectStub *> ganiObjects;
+		std::vector<CAnimationObjectStub *> ganiObjects;
 
 		while ( mapLevels.bytesLeft() > 0 ) {
 			CString tmpLvlName = mapLevels.readString("\n");
@@ -228,26 +232,36 @@ void TGameWindow::DrawScreen() {
 		}
 
 		for (auto ganiObj : ganiObjects) {
-			GaniDraw(ganiObj, ((levelWidth * tile.w) * (ganiObj->getLevel()->getMap() ? ganiObj->getLevel()->getMap()->getLevelX(ganiObj->getLevel()->getLevelName()) : 0)) + ganiObj->getPixelX() - cameraX, ((levelHeight * tile.h) * (ganiObj->getLevel()->getMap() ? ganiObj->getLevel()->getMap()->getLevelY(ganiObj->getLevel()->getLevelName()) : 0)) + ganiObj->getPixelY() - cameraY, time_diff.count());
+			drawAnimation(ganiObj, ((levelWidth * tile.w) * (ganiObj->getLevel()->getMap() ? ganiObj->getLevel()->getMap()->getLevelX(ganiObj->getLevel()->getLevelName()) : 0)) + ganiObj->getPixelX() - cameraX, ((levelHeight * tile.h) * (ganiObj->getLevel()->getMap() ? ganiObj->getLevel()->getMap()->getLevelY(ganiObj->getLevel()->getLevelName()) : 0)) + ganiObj->getPixelY() - cameraY, time_diff.count());
 		}
 
 		ganiObjects.clear();
 	}
 
+	//Increment the frame counter
+	frame++;
+	if (lastTick < curTick - 1000)
+	{
+		lastTick = curTick;
+		fps_current = frame;
+		frame = 0;
+	}
+	char fps_text[50];
+	sprintf(fps_text, "FPS: %d", fps_current);
+
+	drawText(fps_text);
+
 	renderPresent();
-
-
+	
 	if ( fps.get_ticks() < 1000 / FRAMES_PER_SECOND ) {
 		SDL_Delay((1000 / FRAMES_PER_SECOND) - fps.get_ticks());
 	}
 
-
-	lastTick = curTick;
 	startTimer = currentTimer;
 }
 
 void TGameWindow::drawText(const char *text) {
-	SDLEvents();
+	sdlEvents();
 	auto * surf = renderText(font, text, { 255, 255, 255});
 	int w, h;
 
@@ -255,9 +269,8 @@ void TGameWindow::drawText(const char *text) {
 
 	if(surf)
 	{
-		auto dest = SDL_Rect{ /*0*/static_cast<Sint16>(screenWidth / 2 - (w /2)), /*static_cast<Sint16>(prevY)*/static_cast<Sint16>(screenHeight / 2 - (h /2)), static_cast<Uint16>(w), static_cast<Uint16>(h) };
+		auto dest = SDL_Rect{ 10/*static_cast<Sint16>(screenWidth / 2 - (w /2))*/, 10/*static_cast<Sint16>(prevY)static_cast<Sint16>(screenHeight / 2 - (h /2))*/, static_cast<Uint16>(w), static_cast<Uint16>(h) };
 
-		renderClear();
 		renderBlit(surf, nullptr, &dest);
 		renderDestroyTexture(surf);
 		renderPresent();
@@ -265,16 +278,14 @@ void TGameWindow::drawText(const char *text) {
 	}
 }
 
-void TGameWindow::SDLEvents() {
-
-	//const Uint8 keys = SDL_GetKeyboardState(nullptr);
+void TGameWindow::sdlEvents() {
 	if ( SDL_PollEvent(&event)) {
 		if ( event.type == SDL_QUIT ) {
 			shutdownProgram = true;
 		}
 
-		if ((event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) || event.type == SDL_VIDEORESIZE) {
-			renderChangeSurfaceSize(&event);
+		if (RENDER_RESIZE_EVENT) {
+			renderChangeSurfaceSize();
 		}
 
 		if ( event.type == SDL_KEYDOWN ) {
@@ -286,7 +297,7 @@ void TGameWindow::SDLEvents() {
 		}
 	}
 
-	float speed = 0.30f;
+	float speed = 0.15f;
 	int moveX = 0, moveY = 0, dir = 0;
 	if (client->localPlayer)
 		dir = client->localPlayer->getSprite() % 4;
@@ -332,11 +343,13 @@ void TGameWindow::SDLEvents() {
 	client->localPlayer->setProps(CString() >> char(PLPROP_SPRITE) >> char(dir) >> char(PLPROP_GANI) >> char(strlen(ani)) << ani, true, false, client->localPlayer);
 }
 
-void TGameWindow::GaniDraw(CGaniObjectStub* ganiobj, int x, int y, float time) {
-	auto *ani = TAnimation::find(CString(CString() << ganiobj->getAnimation().text() << ".gani").text(), client);
+void TGameWindow::drawAnimation(CAnimationObjectStub* animationObject, int x, int y, float time) {
+	auto *ani = TAnimation::find(CString(CString() << animationObject->getAnimation().text() << ".gani").text(), client);
 
 	if (ani != nullptr)
-		ani->render(ganiobj, client, x, y, ganiobj->getSprite(), &ganiobj->getAniStep(), time);
+		ani->render(animationObject, client, x, y, animationObject->getSprite(), &animationObject->getAniStep(), time);
 }
 
-TGameWindow::~TGameWindow() = default;
+TGameWindow::~TGameWindow() {
+	fps.stop();
+}

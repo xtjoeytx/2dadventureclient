@@ -20,7 +20,7 @@
 #include "CFileSystem.h"
 #include "CSettings.h"
 //#include "CSocket.h"
-#include "CGaniObjectStub.h"
+#include "CAnimationObjectStub.h"
 #include "CTranslationManager.h"
 #include "CWordFilter.h"
 //#include "TServerList.h"
@@ -46,10 +46,6 @@ extern std::atomic_bool shutdownProgram;
 #else
 extern bool shutdownProgram;
 #endif
-const static int FRAMES_PER_SECOND = 60;
-static SDL_Event event;
-static Timer fps;
-static int prevY;
 
 enum // Socket Type
 {

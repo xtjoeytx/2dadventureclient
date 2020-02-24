@@ -86,8 +86,6 @@ TClient::TClient(CString pName)
 
 TClient::~TClient()
 {
-	fps.stop();
-
 	cleanup();
 }
 
@@ -105,7 +103,6 @@ int TClient::init(
 	playerIds.resize(2);
 	npcIds.resize(10001); // Starting npc ids at 10,000 for now on..
 
-	fps.start();
 
 #ifdef V8NPCSERVER
 	// Initialize the Script Engine
@@ -130,6 +127,8 @@ int TClient::init(
 	for (auto & file : *filesystem[0].getFileList()) {
 		if (file.first.find(".gif") > 0 || file.first.find(".png") > 0 || file.first.find(".jpg") > 0) {
 			clientLog.out("\t%s\n", file.first.text());
+			gameWindow->renderClear();
+
 			gameWindow->drawText(file.first.text());
 
 			TImage::find(file.first.text(), this, true);

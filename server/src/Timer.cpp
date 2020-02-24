@@ -30,7 +30,7 @@ void Timer::stop() {
 
 void Timer::pause() {
 	//If the timer is running and isn't already paused
-	if ((started == true) && (paused == false)) {
+	if ( started && !paused ) {
 		//Pause the timer
 		paused = true;
 
@@ -41,7 +41,7 @@ void Timer::pause() {
 
 void Timer::unpause() {
 	//If the timer is paused
-	if ( paused == true ) {
+	if ( paused ) {
 		//Unpause the timer
 		paused = false;
 
@@ -55,9 +55,9 @@ void Timer::unpause() {
 
 int Timer::get_ticks() {
 	//If the timer is running
-	if ( started == true ) {
+	if ( started ) {
 		//If the timer is paused
-		if ( paused == true ) {
+		if ( paused ) {
 			//Return the number of ticks when the timer was paused
 			return pausedTicks;
 		} else {
