@@ -11,7 +11,7 @@
 #endif
 #include <stdio.h>
 
-#include "TServer.h"
+#include "TClient.h"
 #include "TPlayer.h"
 #include "IEnums.h"
 #include "TLevel.h"
@@ -1775,7 +1775,7 @@ bool TPlayer::msgPLI_RC_FILEBROWSER_UP(CString& pPacket)
 		sendPacket(CString() >> (char)PLO_RC_FILEBROWSER_MESSAGE << "Insufficent rights to upload " << checkFile);
 		return true;
 	}
-	
+
 	// See if we are uploading a large file or not.
 	if (rcLargeFiles.find(file) == rcLargeFiles.end())
 	{
@@ -2106,7 +2106,7 @@ bool TPlayer::msgPLI_NPCSERVERQUERY(CString& pPacket)
 	// Read Packet Data
 	unsigned short pid = pPacket.readGUShort();
 	CString message = pPacket.readString("");
-	
+
 	// Enact upon the message.
 	if (message == "location")
 		sendNCAddr();

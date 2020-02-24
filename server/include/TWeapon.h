@@ -13,20 +13,20 @@
 class TPlayer;
 #endif
 
-class TServer;
+class TClient;
 class TWeapon
 {
 	public:
 		// -- Constructor | Destructor -- //
-		TWeapon(TServer *pServer, const signed char pId);
-		TWeapon(TServer *pServer, const CString& pName, const CString& pImage, const CString& pScript, const time_t pModTime = 0, bool pSaveWeapon = false);
+		TWeapon(TClient *pServer, const signed char pId);
+		TWeapon(TClient *pServer, const CString& pName, const CString& pImage, const CString& pScript, const time_t pModTime = 0, bool pSaveWeapon = false);
 		~TWeapon();
 
 		// -- Functions -- //
 		bool saveWeapon();
 		void updateWeapon(const CString& pImage, const CString& pCode, const time_t pModTime = 0, bool pSaveWeapon = true);
 
-		static TWeapon* loadWeapon(const CString& pWeapon, TServer* server);
+		static TWeapon* loadWeapon(const CString& pWeapon, TClient* server);
 
 		// Functions -> Inline Get-Functions
 		CString getWeaponPacket() const;
@@ -47,7 +47,7 @@ class TWeapon
 #ifdef V8NPCSERVER
 		ScriptExecutionContext * getExecutionContext();
 		IScriptWrapped<TWeapon> * getScriptObject() const;
-		
+
 		void freeScriptResources();
 		void queueWeaponAction(TPlayer *player, const std::string& args);
 		void runScriptEvents();
@@ -63,7 +63,7 @@ class TWeapon
 		CString mScriptClient, mScriptServer;
 		std::vector<std::pair<CString, CString> > mByteCode;
 		time_t mModTime;
-		TServer *server;
+		TClient *server;
 
 	private:
 #ifdef V8NPCSERVER

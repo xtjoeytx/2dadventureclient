@@ -1,14 +1,16 @@
 #ifndef TPLAYER_H
 #define TPLAYER_H
 
-#include <time.h>
+#include <ctime>
 #include <map>
 #include <vector>
 #include "IEnums.h"
-#include "CFileQueue.h"
+//#include "CFileQueue.h"
 #include "TAccount.h"
 #include "CEncryption.h"
-#include "CSocket.h"
+//#include "CSocket.h"
+#define CSocket int
+#define playerSock(x) 1
 
 #ifdef V8NPCSERVER
 #include "ScriptBindings.h"
@@ -16,7 +18,7 @@
 #include "CGaniObjectStub.h"
 
 class TLevel;
-class TServer;
+class TClient;
 class TMap;
 class TWeapon;
 //class CFileQueue;
@@ -28,9 +30,13 @@ struct SCachedLevel
 	time_t modTime;
 };
 
-class TPlayer : public TAccount, public CSocketStub
+class TPlayer : public TAccount
+#ifndef __AMIGA__
+		, public CSocketStub
+#endif
 {
 	public:
+#ifndef __AMIGA__
 		// Required by CSocketStub.
 		bool onRecv();
 		bool onSend();
@@ -39,17 +45,22 @@ class TPlayer : public TAccount, public CSocketStub
 		SOCKET getSocketHandle()		{ return playerSock->getHandle(); }
 		bool canRecv();
 		bool canSend();
+#endif
 
 		// Constructor - Deconstructor
-		TPlayer(TServer* pServer, CSocket* pSocket, int pId);
-		~TPlayer();
+		TPlayer(TClient* pServer, CSocket* pSocket, int pId);
+
+
+	~TPlayer();
 
 		// Manage Account
 		inline bool isLoggedIn() const;
 		bool sendLogin();
 
 		// Get Properties
+#ifndef __AMIGA__
 		CSocket* getSocket()			{ return playerSock; }
+#endif
 		TLevel* getLevel() const 		{ return level; }
 		TMap* getMap()					{ return pmap; }
 		CString getGroup()				{ return levelGroup; }
@@ -298,6 +309,7 @@ private:
 		// Misc.
 		void dropItemsOnDeath();
 
+#ifndef __AMIGA__
 		// Socket Variables
 		CSocket *playerSock;
 		CString rBuffer;
@@ -305,7 +317,7 @@ private:
 		// Encryption
 		unsigned char key;
 		CEncryption in_codec;
-
+#endif
 		// Variables
 		CString version, os, serverName;
 		int codepage;
@@ -336,8 +348,10 @@ private:
 
 		CString grExecParameterList;
 
+#ifndef __AMIGA__
 		// File queue.
 		CFileQueue fileQueue;
+#endif
 
 #ifdef V8NPCSERVER
 		bool _processRemoval;

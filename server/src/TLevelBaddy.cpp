@@ -1,6 +1,6 @@
 #include "IDebug.h"
 #include "IEnums.h"
-#include "TServer.h"
+#include "TClient.h"
 #include "IUtil.h"
 #include "TLevelBaddy.h"
 #include "TLevel.h"
@@ -20,7 +20,7 @@ const int baddyPower[baddytypes] = {
 };
 
 
-TLevelBaddy::TLevelBaddy(const float pX, const float pY, const unsigned char pType, TLevel* pLevel, TServer* pServer)
+TLevelBaddy::TLevelBaddy(const float pX, const float pY, const unsigned char pType, TLevel* pLevel, TClient* pServer)
 : level(pLevel), server(pServer), type(pType), id(0),
 startX(pX), startY(pY),
 respawn(true), setImage(false)

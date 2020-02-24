@@ -1,6 +1,7 @@
 #ifndef ICONFIG_H
 #define ICONFIG_H
 
+#define GSERVER_APPNAME		"${PROJECT_NAME}"
 #define GSERVER_VERSION		"${VER_X}.${VER_Y}.${VER_Z}${VER_EXTRA}"
 #define GSERVER_CREDITS		"${GSERVER_CREDITS}"
 

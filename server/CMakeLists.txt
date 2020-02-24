@@ -40,11 +40,11 @@ set(
 	src/TNPC.cpp
 	src/TPlayer.cpp
 	src/TPlayerLogin.cpp
-	src/TPlayerNC.cpp
+	#src/TPlayerNC.cpp
 	src/TPlayerProps.cpp
-	src/TPlayerRC.cpp
-	src/TServer.cpp
-	src/TServerList.cpp
+	#src/TPlayerRC.cpp
+	src/TClient.cpp
+	#src/TServerList.cpp
 	src/TWeapon.cpp
 	src/Timer.cpp
 	src/TImage.cpp
@@ -70,7 +70,7 @@ set(
 	include/TMap.h
 	include/TNPC.h
 	include/TPlayer.h
-	include/TServer.h
+	include/TClient.h
 	include/TServerList.h
 	include/TWeapon.h
 	include/Timer.h
@@ -150,6 +150,12 @@ if(V8NPCSERVER)
 	)
 endif()
 
+if(SDL2)
+	list(APPEND SOURCES src/renderers/TGameWindowRenderer-SDL2.cpp)
+else()
+	list(APPEND SOURCES src/renderers/TGameWindowRenderer-SDL12.cpp)
+endif()
+
 include_directories(
 	# Include the CMake-generated version header from the build directory
 	${PROJECT_BINARY_DIR}/server/include
@@ -172,7 +178,10 @@ if(V8NPCSERVER)
 	message("V8 include: ${V8_INCLUDE_DIR}")
 	include_directories(${V8_INCLUDE_DIR})
 endif()
-include_directories(${SDL2_INCLUDE_DIR})
+include_directories(${SDL2_INCLUDE_DIR} ${SDL2_image_INCLUDE_DIR} ${SDL2_ttf_INCLUDE_DIR} ${SDL2_mixer_INCLUDE_DIR})
+include_directories(${ZLIB_INCLUDE_DIR})
+
+
 
 if(NOT NOUPNP AND NOT MINIUPNPC_FOUND)
 	include_directories(${PROJECT_SOURCE_DIR}/dependencies/miniupnp ${PROJECT_SOURCE_DIR}/dependencies/miniupnp/miniupnpc)
@@ -181,12 +190,15 @@ endif()
 include_directories(${PROJECT_SOURCE_DIR}/dependencies/gs2lib/include)
 
 if(APPLE)
+
 	add_executable(${TARGET_NAME} ${SOURCES} ${HEADERS})
+
 
 	# Enable ARC (automatic reference counting) for OS X build
 	set_property(
 		TARGET ${TARGET_NAME} APPEND_STRING PROPERTY COMPILE_FLAGS "-fobjc-arc"
 	)
+	set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS_RELWITHDEBINFO "-framework SDL2")
 elseif(WIN32)
 	add_executable(${TARGET_NAME} ${SOURCES} ${HEADERS})
 	if(MSVC)
@@ -216,6 +228,7 @@ endif()
 
 add_dependencies(${TARGET_NAME} gs2lib)
 target_link_libraries(${TARGET_NAME} gs2lib)
+add_compile_definitions(__AMIGA__)
 
 if(NOT NOUPNP)
 	if(NOT MINIUPNPC_FOUND)
@@ -240,7 +253,8 @@ if(V8NPCSERVER)
 	endif()
 endif()
 
-target_link_libraries(${TARGET_NAME} ${SDL2_IMAGE_LIBRARY} ${SDL2_LIBRARY})
+target_link_libraries(${TARGET_NAME} ${SDL2_image_LIBRARY} ${SDL2_mixer_LIBRARY} ${SDL2_ttf_LIBRARY} ${SDL2_LIBRARY} ${PNG_LIBRARY} ${FREETYPE_LIBRARY})
+target_link_libraries(${TARGET_NAME} gs1common gs1parse gs1compiler gs1vm)
 
 file(GLOB TEXT
 	"${PROJECT_NAME_LOWER}.wasm"

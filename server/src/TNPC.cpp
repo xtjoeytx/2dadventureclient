@@ -1,7 +1,7 @@
 #include "IDebug.h"
 #include <vector>
 #include <time.h>
-#include "TServer.h"
+#include "TClient.h"
 #include "TNPC.h"
 #include "CFileSystem.h"
 #include "TMap.h"
@@ -20,7 +20,7 @@ const char __nAttrPackets[30] = { 36, 37, 38, 39, 40, 44, 45, 46, 47, 53, 54, 55
 static CString toWeaponName(const CString& code);
 static CString doJoins(const CString& code, CFileSystem* fs);
 
-TNPC::TNPC(const CString& pImage, const CString& pScript, float pX, float pY, TServer* pServer, TLevel* pLevel, bool pLevelNPC)
+TNPC::TNPC(const CString& pImage, const CString& pScript, float pX, float pY, TClient* pServer, TLevel* pLevel, bool pLevelNPC)
 	: TNPC(pServer, pLevelNPC)
 {
 	setX(pX);
@@ -56,7 +56,7 @@ TNPC::TNPC(const CString& pImage, const CString& pScript, float pX, float pY, TS
 		setScriptCode(pScript);
 }
 
-TNPC::TNPC(TServer *pServer, bool pLevelNPC)
+TNPC::TNPC(TClient *pServer, bool pLevelNPC)
 	: server(pServer), levelNPC(pLevelNPC), blockPositionUpdates(false),
 	x(30), y(30.5), x2((int)(x * 16)), y2((int)(y * 16)),
 	gmaplevelx(0), gmaplevely(0),

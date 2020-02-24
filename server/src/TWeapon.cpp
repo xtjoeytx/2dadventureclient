@@ -1,7 +1,7 @@
 #include "IDebug.h"
 
 #include "TWeapon.h"
-#include "TServer.h"
+#include "TClient.h"
 #include "TLevelItem.h"
 #include "TNPC.h"
 #include "IEnums.h"
@@ -12,7 +12,7 @@
 #endif
 
 // -- Constructor: Default Weapons -- //
-TWeapon::TWeapon(TServer *pServer, const signed char pId)
+TWeapon::TWeapon(TClient *pServer, const signed char pId)
 : server(pServer), mModTime(0), mWeaponDefault(pId)
 #ifdef V8NPCSERVER
 , _scriptObject(0), _scriptExecutionContext(pServer->getScriptEngine())
@@ -22,7 +22,7 @@ TWeapon::TWeapon(TServer *pServer, const signed char pId)
 }
 
 // -- Constructor: Weapon Script -- //
-TWeapon::TWeapon(TServer *pServer, const CString& pName, const CString& pImage, const CString& pScript, const time_t pModTime, bool pSaveWeapon)
+TWeapon::TWeapon(TClient *pServer, const CString& pName, const CString& pImage, const CString& pScript, const time_t pModTime, bool pSaveWeapon)
 : server(pServer), mWeaponName(pName), mWeaponImage(pImage), mModTime(pModTime), mWeaponDefault(-1)
 #ifdef V8NPCSERVER
 , _scriptObject(0), _scriptExecutionContext(pServer->getScriptEngine())
@@ -40,7 +40,7 @@ TWeapon::~TWeapon()
 }
 
 // -- Function: Load Weapon -- //
-TWeapon * TWeapon::loadWeapon(const CString& pWeapon, TServer *server)
+TWeapon * TWeapon::loadWeapon(const CString& pWeapon, TClient *server)
 {
 	// File Path
 	CString fileName = server->getServerPath() << "weapons/" << pWeapon;
@@ -147,7 +147,7 @@ bool TWeapon::saveWeapon()
 	output << "IMAGE " << mWeaponImage << "\r\n";
 	for (unsigned int i = 0; i < mByteCode.size(); ++i)
 		output << "BYTECODE " << mByteCode[i].first << "\r\n";
-	
+
 	if (!mWeaponScript.isEmpty())
 	{
 		output << "SCRIPT\r\n";
@@ -231,7 +231,7 @@ void TWeapon::updateWeapon(const CString& pImage, const CString& pCode, const ti
 	this->setFullScript(fixedScript);
 	this->setImage(pImage);
 	this->setModTime(pModTime == 0 ? time(0) : pModTime);
-	
+
 #ifdef V8NPCSERVER
 	// Separate client and server code
 	setServerScript(fixedScript.readString("//#CLIENTSIDE"));

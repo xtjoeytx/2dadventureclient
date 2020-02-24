@@ -2,7 +2,7 @@
 #include "CLog.h"
 #include "IEnums.h"
 #include "CWordFilter.h"
-#include "TServer.h"
+#include "TClient.h"
 #include "TPlayer.h"
 
 char bypass[] =
@@ -275,7 +275,7 @@ int CWordFilter::apply(const TPlayer* player, CString& chat, int check)
 						}
 						if (found) break;
 					}
-					
+
 					// Don't count empty spaces.
 					while (true)
 					{

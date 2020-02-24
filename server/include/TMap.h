@@ -32,15 +32,15 @@ struct SMapLevel
 	int mapy;
 };
 
-class TServer;
+class TClient;
 
 class TMap
 {
 	public:
 		TMap(int pType, bool pGroupMap = false);
-		TMap(int pType, const CString& pFileName, TServer* pServer, bool pGroupMap = false);
+		TMap(int pType, const CString& pFileName, TClient* pServer, bool pGroupMap = false);
 
-		bool load(const CString& filename, TServer* pServer);
+		bool load(const CString& filename, TClient* pServer);
 
 		bool isLevelOnMap(const CString& level) const;
 
@@ -55,8 +55,8 @@ class TMap
 		CString getLevels();
 
 	private:
-		bool loadBigMap(const CString& pFileName, TServer* pServer);
-		bool loadGMap(const CString& pFileName, TServer* pServer);
+		bool loadBigMap(const CString& pFileName, TClient* pServer);
+		bool loadGMap(const CString& pFileName, TClient* pServer);
 
 		int type;
 		CString mapName;

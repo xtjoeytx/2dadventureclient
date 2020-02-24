@@ -20,7 +20,7 @@
 #
 
 cmake_minimum_required(VERSION 2.8.5)
-project(GS2Emu C CXX)
+project(2dadventureclient C CXX)
 
 set(CMAKE_DEBUG_POSTFIX _d)
 
@@ -49,6 +49,10 @@ string(TOLOWER ${PROJECT_NAME} PROJECT_NAME_LOWER)
 
 # Additional CMake modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
+
+if(NOT AMIGA)
+	set(SDL2 TRUE)
+endif()
 
 # Version number in format X.YY.ZZ
 set(VER_X 3)
@@ -86,7 +90,7 @@ else()
 	message("Disabling built-in V8 NPC-Server")
 endif()
 
-option(NOUPNP "Don't compile with UPNP support" OFF)
+option(NOUPNP "Don't compile with UPNP support" ON)
 if(NOT NOUPNP)
 	message("Enabling UPNP support")
 	add_definitions(-DUPNP)
@@ -141,6 +145,7 @@ if(APPLE)
 	set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VER_FULL}")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -std=gnu++17")
+	cmake_policy(SET CMP0042 NEW)
 elseif(WIN32)
 	# Visual C++ Compiler options
 	if(MSVC)
@@ -186,6 +191,10 @@ elseif(WIN32)
 
 elseif(AROS)
 elseif(AMIGA)
+	add_definitions(-D_DEFAULT_SOURCE -D_POSIX_C_SOURCE=1)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Ofast -s -ffast-math -fomit-frame-pointer")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++17 -Ofast -s -ffast-math -fomit-frame-pointer")
+
 else()
 	if(NOT NOSTATIC)
 	#	SET(CMAKE_EXE_LINKER_FLAGS "-static")
@@ -195,6 +204,10 @@ else()
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++17")
 
+endif()
+
+if(NOT NOSTATIC)
+	find_package(PNG)
 endif()
 
 # Prefer static linkage
@@ -235,10 +248,22 @@ if(NOT NOUPNP)
 	endif()
 endif()
 
+add_subdirectory(${PROJECT_SOURCE_DIR}/dependencies/opengs1)
+
 find_package(Threads REQUIRED)
-find_package(SDL2 REQUIRED)
-find_package(SDL2_image REQUIRED)
-##add_subdirectory(${PROJECT_SOURCE_DIR}/dependencies/SDL)
+if (AMIGA)
+	find_package(SDL REQUIRED)
+	find_package(SDL_image REQUIRED)
+	find_package(SDL_mixer REQUIRED)
+	find_package(SDL_ttf REQUIRED)
+	find_package(Freetype REQUIRED)
+else()
+	find_package(SDL2 REQUIRED)
+	find_package(SDL2_image REQUIRED)
+	find_package(SDL2_mixer REQUIRED)
+	find_package(SDL2_ttf REQUIRED)
+endif()
+
 
 # Restore library suffixes
 if(NOT NOSTATIC)

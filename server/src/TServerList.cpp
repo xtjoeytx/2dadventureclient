@@ -4,7 +4,7 @@
 #include "CCommon.h"
 #include "TServerList.h"
 #include "IEnums.h"
-#include "TServer.h"
+#include "TClient.h"
 #include "IUtil.h"
 #include "TPlayer.h"
 
@@ -844,10 +844,10 @@ void TServerList::msgSVI_PMPLAYER(CString& pPacket)
 	CString weapon = data.readString("\n");
 	CString type = data.readString("\n");
 	CString account2 = data.readString("\n");
-	
+
 	CString message2 = data.readString("");
 	CString message3 = message2.gtokenizeI();
-	
+
 	CString player = CString(CString() << account << "\n" << nick << "\n").gtokenizeI() << "\n";
 	CString pmMessageType("\"\",");
 	pmMessageType << "\"Private message:\",";

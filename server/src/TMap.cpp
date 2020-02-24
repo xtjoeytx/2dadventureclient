@@ -4,20 +4,20 @@
 
 #include "CFileSystem.h"
 #include "TMap.h"
-#include "TServer.h"
+#include "TClient.h"
 
 TMap::TMap(int pType, bool pGroupMap)
 : type(pType), modTime(0), width(0), height(0), groupMap(pGroupMap)
 {
 }
 
-TMap::TMap(int pType, const CString& pFileName, TServer* pServer, bool pGroupMap)
+TMap::TMap(int pType, const CString& pFileName, TClient* pServer, bool pGroupMap)
 : type(pType), modTime(0), width(0), height(0), groupMap(pGroupMap)
 {
 	load(pFileName, pServer);
 }
 
-bool TMap::load(const CString& pFileName, TServer* pServer)
+bool TMap::load(const CString& pFileName, TClient* pServer)
 {
 	if (type == MAPTYPE_BIGMAP)
 		return loadBigMap(pFileName, pServer);
@@ -28,9 +28,9 @@ bool TMap::load(const CString& pFileName, TServer* pServer)
 
 bool TMap::isLevelOnMap(const CString& level) const
 {
-	for (std::map<CString, SMapLevel>::const_iterator i = levels.begin(); i != levels.end(); ++i)
+	for (const auto & i : levels)
 	{
-		if (i->first == level)
+		if (i.first == level)
 			return true;
 	}
 	return false;
@@ -38,10 +38,10 @@ bool TMap::isLevelOnMap(const CString& level) const
 
 CString TMap::getLevelAt(int x, int y) const
 {
-	for (std::map<CString, SMapLevel>::const_iterator i = levels.begin(); i != levels.end(); ++i)
+	for (const auto & level : levels)
 	{
-		if (i->second.mapx == x && i->second.mapy == y)
-			return i->first;
+		if (level.second.mapx == x && level.second.mapy == y)
+			return level.first;
 	}
 	return CString();
 }
@@ -58,11 +58,11 @@ int TMap::getLevelY(const CString& level) const
 	return levels.find(level)->second.mapy;
 }
 
-bool TMap::loadBigMap(const CString& pFileName, TServer* pServer)
+bool TMap::loadBigMap(const CString& pFileName, TClient* pServer)
 {
 	// Get the appropriate filesystem.
 	CFileSystem* fileSystem = pServer->getFileSystem();
-	if (pServer->getSettings()->getBool("nofoldersconfig", false) == false)
+	if ( !pServer->getSettings()->getBool("nofoldersconfig", false))
 		fileSystem = pServer->getFileSystem(FS_FILE);
 
 	CString fileName = fileSystem->find(pFileName);
@@ -76,7 +76,7 @@ bool TMap::loadBigMap(const CString& pFileName, TServer* pServer)
 	std::vector<CString> fileData = CString::loadToken(fileName);
 
 	// Parse it.
-	std::vector<CString>::iterator i = fileData.begin();
+	auto i = fileData.begin();
 	levels.clear();
 
 	int bmapx = 0;
@@ -89,10 +89,10 @@ bool TMap::loadBigMap(const CString& pFileName, TServer* pServer)
 		// Untokenize the level names and put them into a vector for easy loading.
 		line.guntokenizeI();
 		std::vector<CString> names = line.tokenize("\n");
-		for (std::vector<CString>::iterator j = names.begin(); j != names.end(); ++j)
+		for (auto & name : names)
 		{
 			// Check for blank levels.
-			if (*j == "\r")
+			if (name == "\r")
 			{
 				++bmapx;
 				continue;
@@ -100,7 +100,7 @@ bool TMap::loadBigMap(const CString& pFileName, TServer* pServer)
 
 			// Save the level into the map.
 			SMapLevel lvl(bmapx++, bmapy);
-			levels[*j] = lvl;
+			levels[name] = lvl;
 		}
 
 		if (bmapx > width) width = bmapx;
@@ -113,11 +113,11 @@ bool TMap::loadBigMap(const CString& pFileName, TServer* pServer)
 	return true;
 }
 
-bool TMap::loadGMap(const CString& pFileName, TServer* pServer)
+bool TMap::loadGMap(const CString& pFileName, TClient* pServer)
 {
 	// Get the appropriate filesystem.
 	CFileSystem* fileSystem = pServer->getFileSystem();
-	if (pServer->getSettings()->getBool("nofoldersconfig", false) == false)
+	if ( !pServer->getSettings()->getBool("nofoldersconfig", false))
 		fileSystem = pServer->getFileSystem(FS_LEVEL);
 
 	CString fileName = fileSystem->find(pFileName);
@@ -199,7 +199,7 @@ bool TMap::loadGMap(const CString& pFileName, TServer* pServer)
 		{
 			if (curLine.size() != 2)
 				continue;
-			
+
 			mapImage = curLine[1];
 		}
 		else if (curLine[0] == "MINIMAPIMG")
@@ -236,11 +236,11 @@ bool TMap::loadGMap(const CString& pFileName, TServer* pServer)
 CString TMap::getLevels()
 {
 	CString retVal;
-	
+
 	for (std::map<CString, SMapLevel>::const_iterator i = levels.begin(); i != levels.end(); ++i)
 	{
 		retVal << i->first << "\n";
 	}
-	
+
 	return retVal;
 }

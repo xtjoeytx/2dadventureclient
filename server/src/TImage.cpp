@@ -1,29 +1,27 @@
 
 #include <unordered_map>
-
-#include <SDL.h>
-#include <TGameWindow.h>
 #include "main.h"
 #include "TImage.h"
-#include "TServer.h"
+#include "TClient.h"
 
-TImage::TImage(CString pName, TServer * theServer)
-{
+TImage::TImage(CString pName, TClient *theServer) {
 	server = theServer;
 	name = pName;
 	real = pName.text() + pName.findl(CFileSystem::getPathSeparator()) + 1;
-	imageList.emplace(name.text(),this);
+
 
 	imgcount = 1;
-	if (real.find(".png"))
+	if ( real.find(".png"))
 		loaded = loadTexture(pName);
 	else
 		loaded = true;
+
+	imageList.emplace(real.text(), this);
 }
 
 TImage::~TImage()
 {
-	//SDL_FreeSurface(texture);
+	server->gameWindow->renderDestroyTexture(texture);
 
 	auto imageIter = imageList.find(name.text());
 	if (imageIter != imageList.end()) {
@@ -34,29 +32,16 @@ TImage::~TImage()
 }
 
 bool TImage::loadTexture(CString pImage) {
-	//The final texture
-	SDL_Texture* newTexture = nullptr;
-
 	//Load image at specified path
-	SDL_Surface* loadedSurface = IMG_Load( pImage.text() );
+	GameTexture* loadedSurface = server->gameWindow->renderLoadImage(pImage.text());
+
 	if( loadedSurface == nullptr ) {
-		printf( "Unable to load image %s! SDL_image Error: %s\n", pImage.text(), IMG_GetError() );
+		printf( "Unable to load image %s!\n", pImage.text() );
 		return false;
 	} else {
-		//Create texture from surface pixels
-		newTexture = SDL_CreateTextureFromSurface( server->gameWindow->renderer, loadedSurface );
-		if( newTexture == nullptr ) {
-			printf( "Unable to create texture from %s! SDL Error: %s\n", pImage.text(), SDL_GetError() );
-		}
-
-		width = loadedSurface->w;
-		height = loadedSurface->h;
-		texture = newTexture;
-
-		//Get rid of old loaded surface
-		SDL_FreeSurface( loadedSurface );
+		TGameWindow::renderQueryTexture(loadedSurface, &width, &height);
+		texture = loadedSurface;
 	}
-
 
 	return true;
 }
@@ -67,22 +52,25 @@ void TImage::render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pH
 
 	auto srcRect = SDL_Rect({static_cast<Sint16>(pStartX),static_cast<Sint16>(pStartY), static_cast<Uint16>(pWidth), static_cast<Uint16>(pHeight)});
 	auto dstRect = SDL_Rect({static_cast<Sint16>(pX),static_cast<Sint16>(pY), static_cast<Uint16>(pWidth), static_cast<Uint16>(pHeight)});
-	if (a < 255) {
-		SDL_SetTextureAlphaMod(texture, a);
+	if (a < SDL_ALPHA_OPAQUE) {
+		TGameWindow::renderSetAlpha(texture, a);
 	}
-	SDL_RenderCopy( server->gameWindow->renderer, texture, &srcRect, &dstRect );
+	server->gameWindow->renderBlit(texture, &srcRect, &dstRect);
+
 }
 
-TImage *TImage::find(std::string pName, TServer * theServer)
-{
+TImage *TImage::find(const std::string& pName, TClient *theServer, bool addIfMissing) {
+	if ( pName.empty()) return nullptr;
+
 	auto imageIter = imageList.find(pName);
-	if (imageIter != imageList.end()) {
+	if ( imageIter != imageList.end()) {
 		return imageIter->second;
 	}
 
-	auto imageFile = theServer->getFileSystem(0)->find(pName);
-	if (imageFile != nullptr) {
-		return new TImage(imageFile, theServer);
+	if (addIfMissing) {
+		auto imageFile = theServer->getFileSystem(0)->find(pName);
+		if ( imageFile != nullptr )
+			return new TImage(imageFile, theServer);
 	}
 
 	return nullptr;

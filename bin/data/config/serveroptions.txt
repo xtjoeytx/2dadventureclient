@@ -69,7 +69,7 @@ profilevars = Kills:=playerkills,Deaths:=playerdeaths,Maxpower:=playerfullhearts
 # Global guild settings.
 # If globalguilds is true, global guilds are allowed.  If false, allowedglobalguilds specifies which guilds are allowed.
 globalguilds = true
-allowedglobalguilds = 
+allowedglobalguilds =
 
 # AP system settings.
 # If apsystem is set to true, it activates some restrictions regarding hearts for low AP players.
@@ -113,14 +113,14 @@ defaultweapons = true
 
 # List of bigmap.txt type maps used by the server.  It lets the server know the level layout
 # so you can see players move and talk in adjacent levels.
-maps = 
+maps =
 
 # List of gmaps to be used by the server.
-gmaps = 
+gmaps = zolderon
 
 # List of group instanced maps used by the server.
 # Use full filenames, even for gmaps.
-groupmaps = 
+groupmaps =
 
 # The head used by RCs on the server.
 staffhead = head25.png
@@ -132,8 +132,8 @@ staffhead = head25.png
 #   maptext is the bigmap.txt styled file with the levels.
 #   mapimage is the image to use
 #   defaultx and defaulty is the position where the heads of players not on the map will be drawn.
-bigmap = 
-minimap = 
+bigmap =
+minimap =
 
 # --------------------------------------------------------------------------------------
 # --- Private server options.  The changestaffacct right is required to alter these. ---
@@ -192,7 +192,7 @@ flaghack_ip = false		# gr.ip
 
 # If folders config is disabled, put additional search directories besides "world" here.
 # Comma delimited array.
-sharefolder = 
+sharefolder =
 
 # Sets the language.  Currently not implemented.
 language = English

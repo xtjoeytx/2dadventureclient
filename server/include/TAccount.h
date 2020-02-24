@@ -124,12 +124,12 @@ enum
 };
 #define propscount	83
 
-class TServer;
+class TClient;
 class TAccount : public CGaniObjectStub
 {
 	public:
 		// Constructor - Deconstructor
-		explicit TAccount(TServer* pServer);
+		explicit TAccount(TClient* pServer);
 		~TAccount();
 
 		static bool meetsConditions(CString fileName, CString conditions);
@@ -219,7 +219,7 @@ class TAccount : public CGaniObjectStub
 		void setPixelY(int setY) 					{ y2 = setY; }
 		int &getAniStep()			 				{ return aniStep; }
 	protected:
-		TServer* server;
+		TClient* server;
 		int aniStep;
 
 		// Player-Account

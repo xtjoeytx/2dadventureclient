@@ -21,3 +21,15 @@ dependencies/.cipd/
 bin/servers/*
 *.swp
 .svn/
+*.uaem
+bin/data/world/images/*.png
+bin/data/world/images/*.gif
+bin/data/world/images/*.jpg
+*.png
+*.jpg
+*.gif
+*.gani
+*.nw
+*.gmap
+bin/data/accounts/*
+bin/data/startuplog.txt

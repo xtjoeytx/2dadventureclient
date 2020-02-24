@@ -2,8 +2,8 @@
 #include <thread>
 #include <atomic>
 #include <functional>
-#include <signal.h>
-#include <stdlib.h>
+#include <csignal>
+#include <cstdlib>
 #include <map>
 #include <SDL.h>
 
@@ -12,8 +12,8 @@
 #include "CString.h"
 #include "IUtil.h"
 #include "CLog.h"
-#include "CSocket.h"
-#include "TServer.h"
+//#include "CSocket.h"
+#include "TClient.h"
 
 
 // Linux specific stuff.
@@ -27,17 +27,22 @@
 // Function pointer for signal handling.
 typedef void (*sighandler_t)(int);
 
-std::map<CString, TServer*> serverList;
+std::map<CString, TClient*> serverList;
+#ifndef __AMIGA__
 std::map<CString, std::thread*> serverThreads;
-
-CLog serverlog("startuplog.txt");
+#endif
+CLog clientLog("startuplog.txt");
 CString overrideServer;
 
 // Home path of the gserver.
-CString homepath;
+CString homePath;
 static void getBasePath();
 
+#ifndef __AMIGA__
 std::atomic_bool shutdownProgram{ false };
+#else
+bool shutdownProgram = false;
+#endif
 
 int main(int argc, char* argv[])
 {
@@ -52,52 +57,60 @@ int main(int argc, char* argv[])
 
 	{
 		// Shut down the server if we get a kill signal.
-		signal(SIGINT, (sighandler_t) shutdownServer);
-		signal(SIGTERM, (sighandler_t) shutdownServer);
-		signal(SIGBREAK, (sighandler_t) shutdownServer);
-		signal(SIGABRT, (sighandler_t) shutdownServer);
+		signal(SIGINT, (sighandler_t)shutdownClient);
+		signal(SIGTERM, (sighandler_t)shutdownClient);
+		signal(SIGBREAK, (sighandler_t)shutdownClient);
+		signal(SIGABRT, (sighandler_t)shutdownClient);
 
 		// Seed the random number generator with the current time.
-		srand((unsigned int)time(0));
+		srand((unsigned int)time(nullptr));
 
 		// Grab the base path to the server executable.
 		getBasePath();
 
 		// Program announcements.
-		serverlog.out("Graal Reborn GServer version %s\n", GSERVER_VERSION);
-		serverlog.out("Programmed by %s.\n\n", GSERVER_CREDITS);
+		clientLog.out( "%s v%s\n", GSERVER_APPNAME, GSERVER_VERSION);
+		clientLog.out("Programmed by %s.\n\n", GSERVER_CREDITS);
 
 		SDL_Init(SDL_INIT_EVERYTHING);
+		//SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 
 		// Load Server Settings
 		if (overrideServer.isEmpty())
 		{
-			serverlog.out(":: Loading servers.txt... ");
+#ifndef __AMIGA__
+			clientLog.out(":: Loading servers.txt... ");
 			CSettings serversettings(CString(homepath) << "servers.txt");
 			if (!serversettings.isOpened())
 			{
-				serverlog.append("FAILED!\n");
+				clientLog.append("FAILED!\n");
 				return ERR_SETTINGS;
 			}
-			serverlog.append("success\n");
+			clientLog.append("success\n");
 
 			// Make sure we actually have a server.
 			if (serversettings.getInt("servercount", 0) == 0)
 			{
-				serverlog.out("** [Error] Incorrect settings.txt file.  servercount not found.\n");
+				clientLog.out("** [Error] Incorrect settings.txt file.  servercount not found.\n");
 				return ERR_SETTINGS;
 			}
 
 			// Load servers.
+
 			for (int i = 1; i <= serversettings.getInt("servercount"); ++i)
 			{
 				CString name = serversettings.getStr(CString() << "server_" << CString(i), "default");
-				TServer* server = new TServer(name);
+#else
+				CString name = "default";
+#endif
 
+				auto* client = new TClient(name);
+
+#ifndef __AMIGA__
 				// Make sure doubles don't exist.
 				if (serverList.find(name) != serverList.end())
 				{
-					serverlog.out("-- [WARNING] Server %s already found, deleting old server.\n", name.text());
+					clientLog.out("-- [WARNING] Server %s already found, deleting old server.\n", name.text());
 					delete serverList[name];
 				}
 
@@ -108,41 +121,54 @@ int main(int argc, char* argv[])
 				CString serverinterface = serversettings.getStr(CString() << "server_" << CString(i) << "_interface");
 
 				// Initialize the server.
-				serverlog.out(":: Starting server: %s.\n", name.text());
+				clientLog.out(":: Starting server: %s.\n", name.text());
+
 				if (server->init(serverip, serverport, localip, serverinterface) != 0)
 				{
-					serverlog.out("** [Error] Failed to start server: %s\n", name.text());
+					clientLog.out("** [Error] Failed to start server: %s\n", name.text());
 					delete server;
 					continue;
 				}
 				serverList[name] = server;
+#else
+				if ( client->init() != 0)
+				{
+					clientLog.out("** [Error] Failed to start...\n");
+					delete client;
+				}
+#endif
 
+				(*client)();
+#ifndef __AMIGA__
 				// Put the server in its own thread.
 				serverThreads[name] = new std::thread(std::ref(*server));
 			}
+#endif
 		}
-		else
-		{
-			TServer* server = new TServer(overrideServer);
+#ifndef __AMIGA__
+		else {
+			TClient *server = new TClient(overrideServer);
 			serverlog.out(":: Starting server: %s.\n", overrideServer.text());
-			if (server->init() != 0)
-			{
+			if ( server->init() != 0 ) {
 				serverlog.out("** [Error] Failed to start server: %s\n", overrideServer.text());
 				delete server;
 				return 1;
 			}
 			serverList[overrideServer] = server;
 
+
 			// Put the server in its own thread.
 			serverThreads[overrideServer] = new std::thread(std::ref(*server));
-		}
 
+		}
+#endif
 		// Announce that the program is now running.
-		serverlog.out(":: Program started.\n");
+		clientLog.out(":: Program started.\n");
 	#if defined(WIN32) || defined(WIN64)
 		serverlog.out(":: Press CTRL+C to close the program.  DO NOT CLICK THE X, you will LOSE data!\n");
 	#endif
 
+#ifndef __AMIGA__
 		// Wait on each thread to end.
 		// Once all threads have ended, the program has terminated.
 		for (std::map<CString, std::thread*>::iterator i = serverThreads.begin(); i != serverThreads.end();)
@@ -157,7 +183,7 @@ int main(int argc, char* argv[])
 		}
 
 		// Delete all the servers.
-		for (std::map<CString, TServer*>::iterator i = serverList.begin(); i != serverList.end(); )
+		for (auto i = serverList.begin(); i != serverList.end(); )
 		{
 			delete i->second;
 			serverList.erase(i++);
@@ -165,6 +191,7 @@ int main(int argc, char* argv[])
 
 		// Destroy the sockets.
 		CSocket::socketSystemDestroy();
+#endif
 	}
 
 	return ERR_SUCCESS;
@@ -178,9 +205,9 @@ bool parseArgs(int argc, char* argv[])
 {
 	std::vector<CString> args;
 	for (int i = 0; i < argc; ++i)
-		args.push_back(CString(argv[i]));
+		args.emplace_back(argv[i]);
 
-	for (std::vector<CString>::iterator i = args.begin(); i != args.end(); ++i)
+	for (auto i = args.begin(); i != args.end(); ++i)
 	{
 		if ((*i).find("--") == 0)
 		{
@@ -228,30 +255,30 @@ bool parseArgs(int argc, char* argv[])
 
 void printHelp(const char* pname)
 {
-	serverlog.out("Graal Reborn GServer version %s\n", GSERVER_VERSION);
-	serverlog.out("Programmed by %s.\n\n", GSERVER_CREDITS);
-	serverlog.out("USAGE: %s [options]\n\n", pname);
-	serverlog.out("Commands:\n\n");
-	serverlog.out(" -h, --help\t\tPrints out this help text.\n");
-	serverlog.out(" -s, --server DIRECTORY\tDirectory that contains the server.\n");
-	serverlog.out("\n");
+	clientLog.out("%s v%s\n", GSERVER_APPNAME, GSERVER_VERSION);
+	clientLog.out("Programmed by %s.\n\n", GSERVER_CREDITS);
+	clientLog.out("USAGE: %s [options]\n\n", pname);
+	clientLog.out("Commands:\n\n");
+	clientLog.out(" -h, --help\t\tPrints out this help text.\n");
+	clientLog.out(" -s, --server DIRECTORY\tDirectory that contains the server.\n");
+	clientLog.out("\n");
 }
 
 const CString getHomePath()
 {
-	return homepath;
+	return homePath;
 }
 
-void shutdownServer(int sig)
+void shutdownClient(int sig)
 {
-	serverlog.out(":: The server is now shutting down...\n-------------------------------------\n\n");
+	clientLog.out(":: The server is now shutting down...\n-------------------------------------\n\n");
 
 	shutdownProgram = true;
 }
 
 void getBasePath()
 {
-	#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN32) || defined(_WIN64)
 	// Get the path.
 	char path[MAX_PATH];
 	GetCurrentDirectoryA(MAX_PATH,path);
@@ -272,11 +299,10 @@ void getBasePath()
 
 	// Assign the path to homepath.
 	char* end = strrchr(path, '/');
-	if (end != 0)
-	{
+	if (end != nullptr) {
 		end++;
-		if (end != 0) *end = '\0';
-		homepath = path;
+		if (end != nullptr) *end = '\0';
+		homePath = path;
 	}
 #endif
 }

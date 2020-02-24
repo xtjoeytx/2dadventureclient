@@ -42,19 +42,19 @@ struct SWordFilterRule
 	CString warnMessage;
 };
 
-class TServer;
+class TClient;
 class TPlayer;
 class CWordFilter
 {
 	public:
-		CWordFilter(TServer* pServer) : server(pServer), showWordsToRC(false) {}
+		CWordFilter(TClient* pServer) : server(pServer), showWordsToRC(false) {}
 		~CWordFilter();
 
 		void load(const CString& file);
 		int apply(const TPlayer* player, CString& chat, int check);
 
 	private:
-		TServer* server;
+		TClient* server;
 
 		CString defaultWarnMessage;
 		bool showWordsToRC;

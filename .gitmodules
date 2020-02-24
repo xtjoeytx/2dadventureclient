@@ -1,15 +1,12 @@
 [submodule "dependencies/miniupnp"]
 	path = dependencies/miniupnp
 	url = https://github.com/miniupnp/miniupnp.git
-[submodule "dependencies/depot_tools"]
-	path = dependencies/depot_tools
-	url = https://chromium.googlesource.com/chromium/tools/depot_tools.git
 [submodule "dependencies/gs2lib"]
 	path = dependencies/gs2lib
 	url = https://xtjoeytx@bitbucket.org/xtjoeytx/gs2lib.git
-[submodule "dependencies/SDL"]
-	path = dependencies/SDL
-	url = https://github.com/SDL-mirror/SDL.git
-[submodule "dependencies/SDL_image"]
-	path = dependencies/SDL_image
-	url = https://github.com/SDL-mirror/SDL_image.git
+[submodule "dependencies/opengs1"]
+	path = dependencies/opengs1
+	url = https://github.com/veryjos/OpenGS1.git
+[submodule "dependencies/milkytracker"]
+	path = dependencies/milkytracker
+	url = https://github.com/AmigaPorts/MilkyTracker.git

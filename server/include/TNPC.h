@@ -144,14 +144,14 @@ enum
 };
 #endif
 
-class TServer;
+class TClient;
 class TLevel;
 class TPlayer;
 class TNPC : public CGaniObjectStub
 {
 	public:
-		TNPC(TServer* pServer, bool pLevelNPC = false);
-		TNPC(const CString& pImage, const CString& pScript, float pX, float pY, TServer* pServer, TLevel* pLevel, bool pLevelNPC = true);
+		TNPC(TClient* pServer, bool pLevelNPC = false);
+		TNPC(const CString& pImage, const CString& pScript, float pX, float pY, TClient* pServer, TLevel* pLevel, bool pLevelNPC = true);
 		~TNPC();
 
 		void setScriptCode(const CString& pScript);
@@ -211,7 +211,9 @@ class TNPC : public CGaniObjectStub
 		time_t getPropModTime(unsigned char pId);
 		unsigned char getColorId(unsigned int idx) const;
 		unsigned char getSave(unsigned int idx) const;
-
+		int &getAniStep() 						{ return aniStep; }
+		int getSprite() 						{ return sprite; }
+		const CString& getAnimation() const		{ return gani; }
 #ifdef V8NPCSERVER
 		// TODO(joey): clean this all up, some of this stuff can be taken out of the v8npcserver definition
 		void addClassCode(const std::string& className, const std::string& classCode);
@@ -260,9 +262,6 @@ class TNPC : public CGaniObjectStub
 		bool runScriptEvents();
 
 		CString getVariableDump();
-		int &getAniStep() 						{ return aniStep; }
-		int getSprite() 						{ return sprite; }
-		const CString& getAnimation() const		{ return gani; }
 #endif
 
 	private:
@@ -283,7 +282,7 @@ class TNPC : public CGaniObjectStub
 		CString serverScript, clientScript, clientScriptFormatted, originalScript;
 		unsigned char saves[10];
 		TLevel* level;
-		TServer* server;
+		TClient* server;
 
 		CString npcScripter, npcType;
 		std::string npcName;
@@ -412,7 +411,7 @@ inline void TNPC::deleteFlag(const std::string& pFlagName)
 }
 
 // TODO(joey): hm
-#include "TServer.h"
+#include "TClient.h"
 
 template<class... Args>
 inline void TNPC::queueNpcEvent(const std::string& action, bool registerAction, Args&&... An)

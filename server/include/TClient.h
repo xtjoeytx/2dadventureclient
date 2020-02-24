@@ -19,14 +19,12 @@
 #include "CLog.h"
 #include "CFileSystem.h"
 #include "CSettings.h"
-#include "CSocket.h"
+//#include "CSocket.h"
 #include "CGaniObjectStub.h"
 #include "CTranslationManager.h"
 #include "CWordFilter.h"
-#include "TServerList.h"
-#include "TImage.h"
+//#include "TServerList.h"
 #include "TGameWindow.h"
-
 
 #ifdef UPNP
 #include "CUPNP.h"
@@ -42,11 +40,16 @@ class TNPC;
 class TMap;
 class TWeapon;
 class TGameWindow;
-
+using namespace std;
+#ifndef __AMIGA__
 extern std::atomic_bool shutdownProgram;
+#else
+extern bool shutdownProgram;
+#endif
 const static int FRAMES_PER_SECOND = 60;
 static SDL_Event event;
 static Timer fps;
+static int prevY;
 
 enum // Socket Type
 {
@@ -66,15 +69,19 @@ enum
 };
 #define FS_COUNT	7
 
+class TImage;
 
-
-class TServer : public CSocketStub
+class TClient
+#ifndef __AMIGA__
+		: public CSocketStub
+#endif
 {
 	public:
 		TGameWindow *gameWindow;
 
 		TPlayer *localPlayer;
 
+#ifndef __AMIGA__
 		// Required by CSocketStub.
 		bool onRecv();
 		bool onSend()				{ return true; }
@@ -83,15 +90,20 @@ class TServer : public CSocketStub
 		SOCKET getSocketHandle()	{ return playerSock.getHandle(); }
 		bool canRecv()				{ return true; }
 		bool canSend()				{ return false; }
+#endif
 
-		TServer(CString pName);
-		~TServer();
+		TClient(CString pName);
+		~TClient();
 		void operator()();
 		void cleanup();
 		void restart();
 		bool running;
 
-		int init(const CString& serverip = "", const CString& serverport = "", const CString& localip = "", const CString& serverinterface = "");
+		int init(
+#ifndef __AMIGA__
+				const CString& serverip = "", const CString& serverport = "", const CString& localip = "", const CString& serverinterface = ""
+#endif
+		);
 		bool doMain();
 
 		// Server Management
@@ -130,20 +142,25 @@ class TServer : public CSocketStub
 		CFileSystem* getFileSystem(int c = 0)			{ return &(filesystem[c]); }
 		CFileSystem* getAccountsFileSystem()			{ return &filesystem_accounts; }
 		CLog& getNPCLog()								{ return npclog; }
-		CLog& getServerLog()							{ return serverlog; }
+		CLog& getServerLog()							{ return clientLog; }
 		CLog& getRCLog()								{ return rclog; }
 #ifdef V8NPCSERVER
 		CLog& getScriptLog()							{ return scriptlog; }
 #endif
 		CSettings* getSettings()						{ return &settings; }
 		CSettings* getAdminSettings()					{ return &adminsettings; }
+#ifndef __AMIGA__
 		CSocketManager* getSocketManager()				{ return &sockManager; }
+#endif
 		CString getServerPath()							{ return serverPath; }
 		CString* getServerMessage()						{ return &servermessage; }
 		CString* getAllowedVersionString()				{ return &allowedVersionString; }
 		CTranslationManager* getTranslationManager()	{ return &mTranslationManager; }
 		CWordFilter* getWordFilter()					{ return &wordFilter; }
+
+#ifndef __AMIGA__
 		TServerList* getServerList()					{ return &serverlist; }
+#endif
 		unsigned int getNWTime() const;
 
 		std::unordered_map<std::string, std::string>* getClassList()	{ return &classList; }
@@ -223,22 +240,29 @@ class TServer : public CSocketStub
 		bool NC_AddWeapon(TWeapon *pWeaponObj);
 		bool NC_DelWeapon(const CString& pWeaponName);
 		void updateWeaponForPlayers(TWeapon *pWeapon);
+		void log(const CString format, ...);
 
 	private:
 		bool doTimedEvents();
+		void setUpLocalPlayer();
+
+#ifndef __AMIGA__
 		void acceptSock(CSocket& pSocket);
+#endif
 		void cleanupDeletedPlayers();
 
 		bool doRestart;
 
 		CFileSystem filesystem[FS_COUNT], filesystem_accounts;
-		CLog npclog, rclog, serverlog; //("logs/npclog|rclog|serverlog.txt");
+		CLog npclog, rclog, clientLog; //("logs/npclog|rclog|serverlog.txt");
 #ifdef V8NPCSERVER
 		CLog scriptlog;
 #endif
 		CSettings adminsettings, settings;
+#ifndef __AMIGA__
 		CSocket playerSock;
 		CSocketManager sockManager;
+#endif
 		CString allowedVersionString, name, servermessage, serverPath;
 		CTranslationManager mTranslationManager;
 		CWordFilter wordFilter;
@@ -256,9 +280,10 @@ class TServer : public CSocketStub
 		std::vector<TPlayer *> playerIds, playerList;
 
 		std::set<TPlayer *> deletedPlayers;
-
+#ifndef __AMIGA__
 		TServerList serverlist;
-		std::chrono::high_resolution_clock::time_point lastTimer, lastNWTimer, last1mTimer, last5mTimer, last3mTimer;
+#endif
+		std::chrono::high_resolution_clock::time_point lastTimer, startTimer, lastNWTimer, last1mTimer, last5mTimer, last3mTimer;
 #ifdef V8NPCSERVER
 		std::chrono::high_resolution_clock::time_point lastScriptTimer;
 		std::chrono::nanoseconds accumulator;
@@ -276,7 +301,7 @@ class TServer : public CSocketStub
 
 };
 
-inline TNPC * TServer::getNPC(const unsigned int id) const
+inline TNPC * TClient::getNPC(const unsigned int id) const
 {
 	if (id >= npcIds.size())
 		return nullptr;
@@ -284,12 +309,12 @@ inline TNPC * TServer::getNPC(const unsigned int id) const
 	return npcIds[id];
 }
 
-inline bool TServer::hasClass(const std::string& className) const
+inline bool TClient::hasClass(const std::string& className) const
 {
 	return classList.find(className) != classList.end();
 }
 
-inline std::string TServer::getClass(const std::string& className) const
+inline std::string TClient::getClass(const std::string& className) const
 {
 	auto classIter = classList.find(className);
 	if (classIter != classList.end())
@@ -300,7 +325,7 @@ inline std::string TServer::getClass(const std::string& className) const
 
 #ifdef V8NPCSERVER
 
-inline TNPC * TServer::getNPCByName(const std::string& name) const
+inline TNPC * TClient::getNPCByName(const std::string& name) const
 {
 	auto npcIter = npcNameList.find(name);
 	if (npcIter != npcNameList.end())
@@ -313,7 +338,7 @@ inline TNPC * TServer::getNPCByName(const std::string& name) const
 
 #include "IEnums.h"
 
-inline void TServer::sendToRC(const CString& pMessage, TPlayer *pPlayer) const
+inline void TClient::sendToRC(const CString& pMessage, TPlayer *pPlayer) const
 {
 	int len = pMessage.find("\n");
 	if (len == -1)
@@ -321,7 +346,7 @@ inline void TServer::sendToRC(const CString& pMessage, TPlayer *pPlayer) const
 	sendPacketTo(PLTYPE_ANYRC, CString() >> (char)PLO_RC_CHAT << pMessage.subString(0, len), pPlayer);
 }
 
-inline void TServer::sendToNC(const CString& pMessage, TPlayer *pPlayer) const
+inline void TClient::sendToNC(const CString& pMessage, TPlayer *pPlayer) const
 {
 	int len = pMessage.find("\n");
 	if (len == -1)

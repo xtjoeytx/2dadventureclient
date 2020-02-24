@@ -36,12 +36,12 @@ enum {
 	BDMODE_COUNT
 };
 
-class TServer;
+class TClient;
 class TLevel;
 class TLevelBaddy
 {
 	public:
-		TLevelBaddy(const float pX, const float pY, const unsigned char pType, TLevel* pLevel, TServer* pServer);
+		TLevelBaddy(const float pX, const float pY, const unsigned char pType, TLevel* pLevel, TClient* pServer);
 
 		void reset();
 		void dropItem();
@@ -69,7 +69,7 @@ class TLevelBaddy
 
 	private:
 		TLevel* level;
-		TServer* server;
+		TClient* server;
 		unsigned char type;
 		char id, power, mode, ani, dir;
 		float x, y, startX, startY;

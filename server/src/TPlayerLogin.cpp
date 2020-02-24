@@ -3,7 +3,7 @@
 #include <math.h>
 
 #include "IConfig.h"
-#include "TServer.h"
+#include "TClient.h"
 #include "TPlayer.h"
 #include "IUtil.h"
 #include "TLevel.h"
@@ -87,7 +87,7 @@ bool TPlayer::sendLogin()
 			return false;
 		}
 	}
-	
+
 	// Server Signature
 	// 0x49 (73) is used to tell the client that more than eight
 	// players will be playing.

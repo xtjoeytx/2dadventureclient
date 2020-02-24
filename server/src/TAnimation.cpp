@@ -1,4 +1,4 @@
-#include "TServer.h"
+#include "TClient.h"
 #include "TImage.h"
 #include "main.h"
 #include <SDL_image.h>
@@ -8,12 +8,13 @@
 #include "TAnimation.h"
 
 /* Animations */
-TAnimation::TAnimation(CString pName, TServer * theServer)
+TAnimation::TAnimation(CString pName, TClient * theServer)
 {
 	server = theServer;
 	name = pName;
 	real = pName.text() + pName.findl(CFileSystem::getPathSeparator()) + 1;
 	loaded = false;
+
 	load();
 
 	animations.emplace(real.text(), this);
@@ -116,7 +117,7 @@ bool TAnimation::load()
 	return true;
 }
 
-void TAnimation::render(CGaniObjectStub * player, TServer * server, int pX, int pY, int pDir, int *pStep, float time)
+void TAnimation::render(CGaniObjectStub * player, TClient * server, int pX, int pY, int pDir, int *pStep, float time)
 {
 	if ( animationAniList.empty() )
 		return;
@@ -126,10 +127,10 @@ void TAnimation::render(CGaniObjectStub * player, TServer * server, int pX, int 
 		*pStep = (*pStep + 1) % max;
 	} else {
 		auto delta = time;
-		currentWait += (delta * 3);
+		currentWait += 0.025f;//(delta * 3);
 	}
 
-	if (*pStep > max) *pStep = max;
+	if (*pStep >= max) *pStep = max-1;
 
 	//*pStep = (isLoop ? (*pStep + 1) % max : (*pStep < max-1 ? *pStep + 1 : *pStep));
 	auto list = animationAniList[(isSingleDir ? *pStep : (*pStep * 4) + pDir)];
@@ -141,27 +142,22 @@ void TAnimation::render(CGaniObjectStub * player, TServer * server, int pX, int 
 		if (i.second == nullptr) continue;
 		i.second->render(player, server, pX, pY);
 	}
-
-
 }
 
-TAnimation *TAnimation::find(const char *pName, TServer * theServer)
+TAnimation *TAnimation::find(const char *pName, TClient * theServer)
 {
 	auto aniIter = animations.find(pName);
 	if (aniIter != animations.end()) {
 		return aniIter->second;
 	}
-
 	auto ani = new TAnimation(theServer->getFileSystem(0)->find(pName), theServer);
 
-	while (!ani->loaded) {
-		;
-	}
+	while (!ani->loaded) ;
 
 	return ani;
 }
 
-TImage *TAnimation::findImage(char *pName, TServer * theServer)
+TImage *TAnimation::findImage(char *pName, TClient * theServer)
 {
 	auto imageIter = imageList.find(pName);
 	if ( imageIter != imageList.end()) {
@@ -193,7 +189,7 @@ TAnimationSprite::~TAnimationSprite()
 
 }
 
-void TAnimationSprite::render(CGaniObjectStub * player, TServer * server, int pX, int pY)
+void TAnimationSprite::render(CGaniObjectStub * player, TClient * server, int pX, int pY)
 {
 	TImage * image = nullptr;
 	std::string tmpImg;
@@ -234,7 +230,7 @@ TAnimationAni::TAnimationAni(TAnimationSprite *pImg, int pX, int pY)
 	y = pY;
 }
 
-void TAnimationAni::render(CGaniObjectStub * player, TServer * server, int pX, int pY)
+void TAnimationAni::render(CGaniObjectStub * player, TClient * server, int pX, int pY)
 {
 	if (img == nullptr)
 		return;

@@ -7,7 +7,7 @@
 #include "TPlayer.h"
 #include "IEnums.h"
 #include "IUtil.h"
-#include "TServer.h"
+#include "TClient.h"
 #include "TAccount.h"
 #include "TLevel.h"
 #include "TMap.h"
@@ -216,7 +216,7 @@ void TPlayer::createFunctions()
 	TPLFunc[PLI_UNKNOWN47] = &TPlayer::msgPLI_UNKNOWN47;
 	TPLFunc[PLI_UPDATECLASS] = &TPlayer::msgPLI_UPDATECLASS;
 	TPLFunc[PLI_RAWDATA] = &TPlayer::msgPLI_RAWDATA;
-
+#ifndef __AMIGA__
 	TPLFunc[PLI_RC_SERVEROPTIONSGET] = &TPlayer::msgPLI_RC_SERVEROPTIONSGET;
 	TPLFunc[PLI_RC_SERVEROPTIONSSET] = &TPlayer::msgPLI_RC_SERVEROPTIONSSET;
 	TPLFunc[PLI_RC_FOLDERCONFIGGET] = &TPlayer::msgPLI_RC_FOLDERCONFIGGET;
@@ -272,6 +272,7 @@ void TPlayer::createFunctions()
 	TPLFunc[PLI_UNKNOWN157] = &TPlayer::msgPLI_UNKNOWN157;
 	TPLFunc[PLI_UPDATESCRIPT] = &TPlayer::msgPLI_UPDATESCRIPT;
 	TPLFunc[PLI_RC_UNKNOWN162] = &TPlayer::msgPLI_RC_UNKNOWN162;
+#endif
 
 	// NPC-Server Functions
 #ifdef V8NPCSERVER
@@ -303,15 +304,22 @@ void TPlayer::createFunctions()
 /*
 	Constructor - Deconstructor
 */
-TPlayer::TPlayer(TServer* pServer, CSocket* pSocket, int pId)
+TPlayer::TPlayer(TClient* pServer,
+		CSocket* pSocket,
+		int pId)
 : TAccount(pServer),
-playerSock(pSocket), key(0),
+#ifndef __AMIGA__
+playerSock(pSocket),
+key(0),
+#endif
 os("wind"), codepage(1252), level(0),
 id(pId), type(PLTYPE_AWAIT), versionID(CLVER_4_208), allowBomb(false), allowBow(false),
 pmap(0), carryNpcId(0), carryNpcThrown(false), loaded(false),
 nextIsRaw(false), rawPacketSize(0), isFtp(false),
 grMovementUpdated(false), isLocalPlayer(false),
+#ifndef __AMIGA__
 fileQueue(pSocket),
+#endif
 packetCount(0), firstLevel(true), invalidPackets(0)
 #ifdef V8NPCSERVER
 , _processRemoval(false), _scriptObject(0)
@@ -339,9 +347,11 @@ void TPlayer::setLocalPlayer(bool isLocal) {
 
 TPlayer::~TPlayer()
 {
+#ifndef __AMIGA__
 	// Send all unsent data (for disconnect messages and whatnot).
 	if (playerSock)
 		fileQueue.sendCompress();
+#endif
 
 	if (id >= 0 && server != 0 && loaded)
 	{
@@ -389,9 +399,10 @@ TPlayer::~TPlayer()
 		delete cl;
 		spLevels.erase(i++);
 	}
-
+#ifndef __AMIGA__
 	if (playerSock)
 		delete playerSock;
+#endif
 
 #ifdef V8NPCSERVER
 	if (_scriptObject)
@@ -402,6 +413,7 @@ TPlayer::~TPlayer()
 #endif
 }
 
+#ifndef __AMIGA__
 bool TPlayer::onRecv()
 {
 	// If our socket is gone, delete ourself.
@@ -448,7 +460,7 @@ bool TPlayer::canSend()
 {
 	return fileQueue.canSend();
 }
-
+#endif
 /*
 	Socket-Control Functions
 */
@@ -457,6 +469,7 @@ bool TPlayer::doMain()
 	// definitions
 	CString unBuffer;
 
+#ifndef __AMIGA__
 	// parse data
 	rBuffer.setRead(0);
 	while (rBuffer.length() > 1)
@@ -497,7 +510,7 @@ bool TPlayer::doMain()
 		if (!parsePacket(unBuffer))
 			return false;
 	}
-
+#endif
 	// Update the -gr_movement packets.
 	if (!grMovementPackets.isEmpty())
 	{
@@ -511,7 +524,9 @@ bool TPlayer::doMain()
 	}
 	grMovementUpdated = false;
 
+#ifndef __AMIGA__
 	server->getSocketManager()->updateSingle(this, false, true);
+#endif
 	return true;
 }
 
@@ -519,13 +534,14 @@ bool TPlayer::doTimedEvents()
 {
 	time_t currTime = time(0);
 
+#ifndef __AMIGA__
 	// If we are disconnected, delete ourself!
 	if ((playerSock == 0 || playerSock->getState() == SOCKET_STATE_DISCONNECTED) && !isLocalPlayer)
 	{
 		server->deletePlayer(this);
 		return false;
 	}
-
+#endif
 	// Only run for clients.
 	if (!isClient()) return true;
 
@@ -610,6 +626,7 @@ void TPlayer::disconnect()
 
 bool TPlayer::parsePacket(CString& pPacket)
 {
+#ifndef __AMIGA__
 	// First packet is always unencrypted zlib.  Read it in a special way.
 	if (type == PLTYPE_AWAIT)
 	{
@@ -662,12 +679,13 @@ bool TPlayer::parsePacket(CString& pPacket)
 		if (!(*this.*TPLFunc[id])(curPacket))
 			return false;
 	}
-
+#endif
 	return true;
 }
 
 void TPlayer::decryptPacket(CString& pPacket)
 {
+#ifndef __AMIGA__
 	// Version 1.41 - 2.18 encryption
 	// Was already decompressed so just decrypt the packet.
 	if (in_codec.getGen() == ENCRYPT_GEN_3)
@@ -708,10 +726,12 @@ void TPlayer::decryptPacket(CString& pPacket)
 		else if (pType != COMPRESS_UNCOMPRESSED)
 			serverlog.out("[%s] ** [ERROR] Client gave incorrect packet compression type! [%d]\n", server->getName().text(), pType);
 	}
+#endif
 }
 
 void TPlayer::sendPacket(CString pPacket, bool appendNL)
 {
+#ifndef __AMIGA__
 	// empty buffer?
 	if (pPacket.isEmpty())
 		return;
@@ -725,6 +745,7 @@ void TPlayer::sendPacket(CString pPacket, bool appendNL)
 
 	// append buffer
 	fileQueue.addPacket(pPacket);
+#endif
 }
 
 bool TPlayer::sendFile(const CString& pFile)
@@ -1017,8 +1038,10 @@ bool TPlayer::processChat(CString pChat)
 		// Try to load the file.
 		if (file.length() != 0)
 			setProps(CString() >> (char)PLPROP_HEADGIF >> (char)(chatParse[1].length() + 100) << chatParse[1], true, true);
+#ifndef __AMIGA__
 		else
 			server->getServerList()->sendPacket(CString() >> (char)SVO_GETFILE3 >> (short)id >> (char)0 >> (char)chatParse[1].length() << chatParse[1]);
+#endif
 	}
 	else if (chatParse[0] == "setbody" && chatParse.size() == 2)
 	{
@@ -1027,8 +1050,8 @@ bool TPlayer::processChat(CString pChat)
 
 		// Check to see if it is a default body.
 		bool isDefault = false;
-		for (auto & __defaultbodie : __defaultbodies)
-			if ( chatParse[1].match(CString(__defaultbodie))) isDefault = true;
+		for (auto & __defaultbody : __defaultbodies)
+			if (chatParse[1].match(CString(__defaultbody)) == true) isDefault = true;
 
 		// Don't search for the file if it is one of the defaults.  This protects against
 		// malicious gservers.
@@ -1064,8 +1087,10 @@ bool TPlayer::processChat(CString pChat)
 		// Try to load the file.
 		if (file.length() != 0)
 			setProps(CString() >> (char)PLPROP_BODYIMG >> (char)chatParse[1].length() << chatParse[1], true, true);
+#ifndef __AMIGA__
 		else
 			server->getServerList()->sendPacket(CString() >> (char)SVO_GETFILE3 >> (short)id >> (char)1 >> (char)chatParse[1].length() << chatParse[1]);
+#endif
 	}
 	else if (chatParse[0] == "setsword" && chatParse.size() == 2)
 	{
@@ -1111,8 +1136,10 @@ bool TPlayer::processChat(CString pChat)
 		// Try to load the file.
 		if (file.length() != 0)
 			setProps(CString() >> (char)PLPROP_SWORDPOWER >> (char)(swordPower + 30) >> (char)chatParse[1].length() << chatParse[1], true, true);
+#ifndef __AMIGA__
 		else
 			server->getServerList()->sendPacket(CString() >> (char)SVO_GETFILE3 >> (short)id >> (char)2 >> (char)chatParse[1].length() << chatParse[1]);
+#endif
 	}
 	else if (chatParse[0] == "setshield" && chatParse.size() == 2)
 	{
@@ -1158,8 +1185,10 @@ bool TPlayer::processChat(CString pChat)
 		// Try to load the file.
 		if (file.length() != 0)
 			setProps(CString() >> (char)PLPROP_SHIELDPOWER >> (char)(shieldPower + 10) >> (char)chatParse[1].length() << chatParse[1], true, true);
+#ifndef __AMIGA__
 		else
 			server->getServerList()->sendPacket(CString() >> (char)SVO_GETFILE3 >> (short)id >> (char)3 >> (char)chatParse[1].length() << chatParse[1]);
+#endif
 	}
 	else if (chatParse[0] == "setskin" && chatParse.size() == 2 && setcolorsallowed)
 	{
@@ -1991,7 +2020,7 @@ void TPlayer::setNick(const CString& pNickName, bool force)
 				}
 			}
 		}
-
+#ifndef __AMIGA__
 		// See if it is a global guild.
 		if (askGlobal)
 		{
@@ -2002,6 +2031,7 @@ void TPlayer::setNick(const CString& pNickName, bool force)
 				>> (char)guild.length() << guild
 				);
 		}
+#endif
 	}
 	else
 	{
@@ -2157,6 +2187,7 @@ bool TPlayer::msgPLI_NULL(CString& pPacket)
 
 bool TPlayer::msgPLI_LOGIN(CString& pPacket)
 {
+#ifndef __AMIGA__
 	// Read Player-Ip
 	accountIpStr = playerSock->getRemoteIp();
 #ifdef HAVE_INET_PTON
@@ -2296,7 +2327,7 @@ bool TPlayer::msgPLI_LOGIN(CString& pPacket)
 		>> (char)password.length() << password
 		>> (short)id >> (char)type
 		);
-
+#endif
 	return true;
 }
 
@@ -2555,10 +2586,11 @@ bool TPlayer::msgPLI_CLAIMPKER(CString& pPacket)
 		unsigned int otherRating = player->getProp(PLPROP_RATING).readGUInt();
 		float oldStats[4] = { rating, deviation, (float)((otherRating >> 9) & 0xFFF), (float)(otherRating & 0x1FF) };
 
+#ifndef __AMIGA__
 		// If the IPs are the same, don't update the rating to prevent cheating.
 		if (CString(playerSock->getRemoteIp()) == CString(player->getSocket()->getRemoteIp()))
 			return true;
-
+#endif
 		float gSpar[2] = {static_cast<float>(1.0f / pow((1.0f+3.0f*pow(0.0057565f,2)*(pow(oldStats[3],2))/pow(3.14159265f,2)),0.5f)),	//Winner
 			static_cast<float>(1.0f / pow((1.0f+3.0f*pow(0.0057565f,2)*(pow(oldStats[1],2))/pow(3.14159265f,2)),0.5f))};	//Loser
 		float ESpar[2] = {1.0f / (1.0f + pow(10.0f,(-gSpar[1]*(oldStats[2]-oldStats[0])/400.0f))),					//Winner
@@ -3746,7 +3778,9 @@ bool TPlayer::msgPLI_SHOOT(CString& pPacket)
 bool TPlayer::msgPLI_SERVERWARP(CString& pPacket)
 {
 	CString servername = pPacket.readString("");
+#ifndef __AMIGA__
 	server->getServerList()->sendPacket(CString() >> (char)SVO_SERVERINFO >> (short)id << servername);
+#endif
 	return true;
 }
 
@@ -3857,8 +3891,10 @@ bool TPlayer::msgPLI_RAWDATA(CString& pPacket)
 
 bool TPlayer::msgPLI_PROFILEGET(CString& pPacket)
 {
+#ifndef __AMIGA__
 	// Send the packet ID for backwards compatibility.
 	server->getServerList()->sendPacket(CString() >> (char)SVO_GETPROF >> (short)id << pPacket);
+#endif
 	return true;
 }
 
@@ -3866,10 +3902,11 @@ bool TPlayer::msgPLI_PROFILESET(CString& pPacket)
 {
 	CString acc = pPacket.readChars(pPacket.readGUChar());
 	if (acc != accountName) return true;
-
+#ifndef __AMIGA__
 	// Old gserver would send the packet ID with pPacket so, for
 	// backwards compatibility, do that here.
 	server->getServerList()->sendPacket(CString() >> (char)SVO_SETPROF << pPacket);
+#endif
 	return true;
 }
 
@@ -3880,12 +3917,13 @@ std::vector<CString> TPlayer::getPMServerList()
 
 bool TPlayer::addPMServer(CString& option)
 {
+#ifndef __AMIGA__
 	TServerList* list = server->getServerList();
 
 	bool PMSrvExist = false;
-	for (auto ij = PMServerList.begin(); ij != PMServerList.end(); ++ij)
+	for (const auto & ij : PMServerList)
 	{
-		if ((ij)->text() == option)
+		if (ij.->text() == option)
 		{
 			PMSrvExist = true;
 		}
@@ -3899,6 +3937,9 @@ bool TPlayer::addPMServer(CString& option)
 	}
 	else
 		return false;
+#else
+	return false;
+#endif
 }
 
 
@@ -4053,8 +4094,10 @@ bool TPlayer::updatePMPlayers(CString& servername, CString& players)
 
 bool TPlayer::pmExternalPlayer(CString servername, CString account, CString& pmMessage)
 {
+#ifndef __AMIGA__
 	TServerList* list = server->getServerList();
 	list->sendPacket(CString() >> (char)SVO_PMPLAYER >> (short)id << CString(CString() << servername << "\n" << accountName << "\n" << nickName << "\n" << "GraalEngine" << "\n" << "pmplayer" << "\n" << account << "\n" << pmMessage).gtokenizeI());
+#endif
 	return true;
 }
 
@@ -4085,6 +4128,7 @@ TPlayer* TPlayer::getExternalPlayer(const CString& account, bool includeRC) cons
 
 bool TPlayer::msgPLI_REQUESTTEXT(CString& pPacket)
 {
+#ifndef __AMIGA__
 	// TODO(joey): So I believe these are just requests for information, while sendtext is used to actually do things.
 
 	CString packet = pPacket.readString("");
@@ -4120,13 +4164,15 @@ bool TPlayer::msgPLI_REQUESTTEXT(CString& pPacket)
 	else if (type == "irc") {
 	}
 
-
 	serverlog.out("[ IN] [RequestText] %s,%s\n", accountName.gtokenize().text(),packet.text());
+
+#endif
 	return true;
 }
 
 bool TPlayer::msgPLI_SENDTEXT(CString& pPacket)
 {
+#ifndef __AMIGA__
 	CString packet = pPacket.readString("");
 	CString data = packet.guntokenize();
 
@@ -4230,7 +4276,7 @@ bool TPlayer::msgPLI_SENDTEXT(CString& pPacket)
 	}
 
 	serverlog.out("[ IN] [SendText] %s,%s\n", accountName.gtokenize().text(), packet.text());
-
+#endif
 	return true;
 }
 

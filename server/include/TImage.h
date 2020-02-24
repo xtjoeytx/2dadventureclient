@@ -2,26 +2,27 @@
 #define TIMAGE_H
 
 #include <SDL.h>
-#include <SDL_image.h>
 #include <CString.h>
-#include "TServer.h"
+#include "TGameWindow.h"
+#include "TClient.h"
 
 
 class TImage
 {
 	public:
-		explicit TImage(CString pName, TServer * theServer);
+		explicit TImage(CString pName, TClient * theServer);
 		~TImage();
 
 		CString name, real;
 
-	bool loadTexture(CString pImage);
+		bool countChange(int pCount);
+		bool loadTexture(CString pImage);
 		inline void render(int pX, int pY);
 		inline void render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pHeight, int alpha);
 		inline void render(int pX, int pY, float r, float g, float b, float a);
 		void render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pHeight, float r, float g, float b, float a);
 
-		static TImage *find(std::string pName, TServer * theServer);
+		static TImage *find(const std::string& pName, TClient * theServer, bool addIfMissing = false);
 
 		int getWidth() const { return width; }
 		int getHeight() const { return height; }
@@ -29,8 +30,10 @@ class TImage
 	private:
 		bool loaded;
 		int imgcount, fullwidth, fullheight, height, width;
-		SDL_Texture * texture;
-		TServer *server;
+
+		GameTexture * texture;
+
+		TClient *server;
 };
 
 inline void TImage::render(int pX, int pY)

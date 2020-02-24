@@ -2,13 +2,13 @@
 #include <memory.h>
 #include <time.h>
 #include "TAccount.h"
-#include "TServer.h"
+#include "TClient.h"
 #include "CFileSystem.h"
 
 /*
 	TAccount: Constructor - Deconstructor
 */
-TAccount::TAccount(TServer* pServer)
+TAccount::TAccount(TClient* pServer)
 : server(pServer),
 isBanned(false), isLoadOnly(false), isGuest(false),
 adminIp("0.0.0.0"),

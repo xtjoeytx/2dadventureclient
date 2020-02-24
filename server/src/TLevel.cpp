@@ -1,7 +1,7 @@
 #include <set>
 #include "IDebug.h"
 #include "IEnums.h"
-#include "TServer.h"
+#include "TClient.h"
 #include "TLevel.h"
 #include "TPlayer.h"
 #include "TNPC.h"
@@ -19,7 +19,7 @@ short respawningTiles[] = {
 /*
 	TLevel: Constructor - Deconstructor
 */
-TLevel::TLevel(TServer* pServer)
+TLevel::TLevel(TClient* pServer)
 :
 server(pServer), modTime(0), levelSpar(false), levelSingleplayer(false)
 #ifdef V8NPCSERVER
@@ -925,7 +925,7 @@ bool TLevel::loadNW(const CString& pLevelName)
 /*
 	TLevel: Find Level
 */
-TLevel* TLevel::findLevel(const CString& pLevelName, TServer* server)
+TLevel* TLevel::findLevel(const CString& pLevelName, TClient* server)
 {
 	std::vector<TLevel*>* levelList = server->getLevelList();
 

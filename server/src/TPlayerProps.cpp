@@ -1,7 +1,7 @@
 #include "IDebug.h"
 #include <vector>
 
-#include "TServer.h"
+#include "TClient.h"
 #include "TPlayer.h"
 #include "IEnums.h"
 #include "IUtil.h"

@@ -1,8 +1,8 @@
 #include "IDebug.h"
 #include "TLevelHorse.h"
-#include "TServer.h"
+#include "TClient.h"
 
-TLevelHorse::TLevelHorse(TServer* server, const CString& pImage, float pX, float pY, char pDir, char pBushes)
+TLevelHorse::TLevelHorse(TClient* server, const CString& pImage, float pX, float pY, char pDir, char pBushes)
 : image(pImage), x(pX), y(pY), dir(pDir), bushes(pBushes)
 {
 	timeout.setTimeout(server->getSettings()->getInt("horselifetime", 30));

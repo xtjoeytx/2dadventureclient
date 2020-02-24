@@ -11,7 +11,7 @@
 #include <map>
 #include "IDebug.h"
 #include "IUtil.h"
-#include "TServer.h"
+#include "TClient.h"
 #include "CFileSystem.h"
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -27,21 +27,27 @@
 #endif
 
 CFileSystem::CFileSystem()
-: server(0)
+: server(nullptr)
 {
-	m_preventChange = new std::recursive_mutex();
+#ifndef __AMIGA__
+	m_preventChange = new recursive_mutex();
+#endif
 }
 
-CFileSystem::CFileSystem(TServer* pServer)
+CFileSystem::CFileSystem(TClient* pServer)
 : server(pServer)
 {
-	m_preventChange = new std::recursive_mutex();
+#ifndef __AMIGA__
+	m_preventChange = new recursive_mutex();
+#endif
 }
 
 CFileSystem::~CFileSystem()
 {
 	clear();
+#ifndef __AMIGA__
 	delete m_preventChange;
+#endif
 }
 
 void CFileSystem::clear()
@@ -52,9 +58,10 @@ void CFileSystem::clear()
 
 void CFileSystem::addDir(const CString& dir, const CString& wildcard, bool forceRecursive)
 {
-	std::lock_guard<std::recursive_mutex> lock(*m_preventChange);
-
-	if (server == 0) return;
+#ifndef __AMIGA__
+	std::lock_guard<recursive_mutex> lock(*m_preventChange);
+#endif
+	if (server == nullptr) return;
 
 	// Format the directory.
 	CString newDir(dir);
@@ -81,8 +88,9 @@ void CFileSystem::addDir(const CString& dir, const CString& wildcard, bool force
 
 void CFileSystem::addFile(CString file)
 {
-	std::lock_guard<std::recursive_mutex> lock(*m_preventChange);
-
+#ifndef __AMIGA__
+	std::lock_guard<recursive_mutex> lock(*m_preventChange);
+#endif
 	// Grab the file name and directory.
 	CFileSystem::fixPathSeparators(&file);
 	CString filename(file.subString(file.findl(fSep) + 1));
@@ -98,8 +106,9 @@ void CFileSystem::addFile(CString file)
 
 void CFileSystem::removeFile(const CString& file)
 {
-	std::lock_guard<std::recursive_mutex> lock(*m_preventChange);
-
+#ifndef __AMIGA__
+	std::lock_guard<recursive_mutex> lock(*m_preventChange);
+#endif
 	// Grab the file name and directory.
 	CString filename(file.subString(file.findl(fSep) + 1));
 	CString directory(file.subString(0, file.find(filename)));
@@ -113,40 +122,44 @@ void CFileSystem::removeFile(const CString& file)
 
 void CFileSystem::resync()
 {
-	std::lock_guard<std::recursive_mutex> lock(*m_preventChange);
-
+#ifndef __AMIGA__
+	std::lock_guard<recursive_mutex> lock(*m_preventChange);
+#endif
 	// Clear the file list.
 	fileList.clear();
 
 	// Iterate through all the directories, reloading their file list.
-	for (std::vector<CString>::const_iterator i = dirList.begin(); i != dirList.end(); ++i)
-		loadAllDirectories(*i, server->getSettings()->getBool("nofoldersconfig", false));
+	for (const auto & i : dirList)
+		loadAllDirectories(i, server->getSettings()->getBool("nofoldersconfig", false));
 }
 
 CString CFileSystem::find(const CString& file) const
 {
-	std::lock_guard<std::recursive_mutex> lock(*m_preventChange);
-
-	std::map<CString, CString>::const_iterator i = fileList.find(file);
+#ifndef __AMIGA__
+	std::lock_guard<recursive_mutex> lock(*m_preventChange);
+#endif
+	auto i = fileList.find(file);
 	if (i == fileList.end()) return CString();
 	return CString(i->second);
 }
 
 CString CFileSystem::findi(const CString& file) const
 {
-	std::lock_guard<std::recursive_mutex> lock(*m_preventChange);
-
-	for (std::map<CString, CString>::const_iterator i = fileList.begin(); i != fileList.end(); ++i)
-		if (i->first.comparei(file)) return CString(i->second);
+#ifndef __AMIGA__
+	std::lock_guard<recursive_mutex> lock(*m_preventChange);
+#endif
+	for (const auto & i : fileList)
+		if (i.first.comparei(file)) return CString(i.second);
 	return CString();
 }
 
 CString CFileSystem::fileExistsAs(const CString& file) const
 {
-	std::lock_guard<std::recursive_mutex> lock(*m_preventChange);
-
-	for (std::map<CString, CString>::const_iterator i = fileList.begin(); i != fileList.end(); ++i)
-		if (i->first.comparei(file)) return CString(i->first);
+#ifndef __AMIGA__
+	std::lock_guard<recursive_mutex> lock(*m_preventChange);
+#endif
+	for (const auto & i : fileList)
+		if (i.first.comparei(file)) return CString(i.first);
 	return CString();
 }
 
@@ -191,7 +204,7 @@ void CFileSystem::loadAllDirectories(const CString& directory, bool recursive)
 	struct dirent *ent;
 
 	// Try to open the directory.
-	if ((dir = opendir(path.text())) == 0)
+	if ((dir = opendir(path.text())) == nullptr)
 		return;
 
 	// Read everything in it now.
@@ -226,8 +239,9 @@ void CFileSystem::loadAllDirectories(const CString& directory, bool recursive)
 
 CString CFileSystem::load(const CString& file) const
 {
-	std::lock_guard<std::recursive_mutex> lock(*m_preventChange);
-
+#ifndef __AMIGA__
+	std::lock_guard<recursive_mutex> lock(*m_preventChange);
+#endif
 	// Get the full path to the file.
 	CString fileName = find(file);
 	if (fileName.length() == 0) return CString();
@@ -241,8 +255,9 @@ CString CFileSystem::load(const CString& file) const
 
 time_t CFileSystem::getModTime(const CString& file) const
 {
-	std::lock_guard<std::recursive_mutex> lock(*m_preventChange);
-
+#ifndef __AMIGA__
+	std::lock_guard<recursive_mutex> lock(*m_preventChange);
+#endif
 	// Get the full path to the file.
 	CString fileName = find(file);
 	if (fileName.length() == 0) return 0;
@@ -255,8 +270,9 @@ time_t CFileSystem::getModTime(const CString& file) const
 
 bool CFileSystem::setModTime(const CString& file, time_t modTime) const
 {
-	std::lock_guard<std::recursive_mutex> lock(*m_preventChange);
-
+#ifndef __AMIGA__
+	std::lock_guard<recursive_mutex> lock(*m_preventChange);
+#endif
 	// Get the full path to the file.
 	CString fileName = find(file);
 	if (fileName.length() == 0) return false;
@@ -267,14 +283,14 @@ bool CFileSystem::setModTime(const CString& file, time_t modTime) const
 	ut.modtime = modTime;
 
 	// Change the file.
-	if (utime(fileName.text(), &ut) == 0) return true;
-	return false;
+	return utime(fileName.text(), &ut) == 0;
 }
 
 int CFileSystem::getFileSize(const CString& file) const
 {
-	std::lock_guard<std::recursive_mutex> lock(*m_preventChange);
-
+#ifndef __AMIGA__
+	std::lock_guard<recursive_mutex> lock(*m_preventChange);
+#endif
 	// Get the full path to the file.
 	CString fileName = find(file);
 	if (fileName.length() == 0) return 0;

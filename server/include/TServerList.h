@@ -16,7 +16,7 @@ enum
 };
 
 class TPlayer;
-class TServer;
+class TClient;
 class TServerList : public CSocketStub
 {
 	public:
@@ -32,10 +32,10 @@ class TServerList : public CSocketStub
 		// Constructor - Deconstructor
 		TServerList();
 		~TServerList();
-		void setServer(TServer* pServer) { server = pServer; }
+		void setServer(TClient* pServer) { server = pServer; }
 
 		bool doTimedEvents();
-		
+
 		// Socket-Control Functions
 		bool getConnected() const;
 		bool main();
@@ -86,7 +86,7 @@ class TServerList : public CSocketStub
 		void msgSVI_SERVERINFO(CString& pPacket);
 		void msgSVI_REQUESTTEXT(CString& pPacket);
 		void msgSVI_PMPLAYER(CString& pPacket);
-		
+
 	protected:
 		// Packet Functions
 		void parsePacket(CString& pPacket);
@@ -98,7 +98,7 @@ class TServerList : public CSocketStub
 		CString rBuffer, sBuffer;
 		CSocket sock;
 		time_t lastData, lastPing, lastTimer, lastPlayerSync;
-		TServer *server;
+		TClient *server;
 };
 
 #endif // TSERVERLIST_H

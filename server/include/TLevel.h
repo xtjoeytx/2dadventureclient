@@ -13,7 +13,7 @@
 #include "TLevelLink.h"
 #include "TLevelSign.h"
 
-class TServer;
+class TClient;
 class TPlayer;
 class TNPC;
 class TMap;
@@ -28,7 +28,7 @@ class TLevel
 		//! \param pLevelName The name of the level to search for.
 		//! \param server The server the level belongs to.
 		//! \return A pointer to the level found.
-		static TLevel* findLevel(const CString& pLevelName, TServer* server);
+		static TLevel* findLevel(const CString& pLevelName, TClient* server);
 
 		//! Re-loads the level.
 		//! \return True if it succeeds in re-loading the level.
@@ -36,7 +36,7 @@ class TLevel
 
 		//! Returns a clone of the level.
 		TLevel* clone();
-		
+
 		// get crafted packets
 		CString getBaddyPacket(int clientVersion = CLVER_2_17);
 		CString getBoardPacket();
@@ -86,7 +86,7 @@ class TLevel
 
 		//! Gets the server this level belongs to.
 		//! \return The server this level belongs to.
-		TServer* getServer() const						{ return server; }
+		TClient* getServer() const						{ return server; }
 
 		//! Gets the status on whether players are on the level.
 		//! \return The level has players.  If true, the level has players on it.
@@ -210,7 +210,7 @@ class TLevel
 #endif
 
 	private:
-		TLevel(TServer* pServer);
+		TLevel(TClient* pServer);
 
 		// level-loading functions
 		bool loadLevel(const CString& pLevelName);
@@ -219,7 +219,7 @@ class TLevel
 		bool loadZelda(const CString& pLevelName);
 		bool loadNW(const CString& pLevelName);
 
-		TServer* server;
+		TClient* server;
 		time_t modTime;
 		bool levelSpar;
 		bool levelSingleplayer;

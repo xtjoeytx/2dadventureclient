@@ -3,14 +3,13 @@
 #include <atomic>
 #include <chrono>
 #include <functional>
-#include <SDL.h>
-#include <SDL_image.h>
 
-#include "TServer.h"
+#include "TClient.h"
 #include "main.h"
 #include "TPlayer.h"
 #include "TWeapon.h"
 #include "IUtil.h"
+#include "IConfig.h"
 #include "TNPC.h"
 #include "TMap.h"
 #include "TLevel.h"
@@ -36,7 +35,7 @@ static const Uint32 amask = 0x000000ff;
 #else
 #endif
 
-TServer::TServer(CString pName)
+TClient::TClient(CString pName)
 	: running(false), doRestart(false), name(pName), wordFilter(this), gameWindow(new TGameWindow(this))
 #ifdef V8NPCSERVER
 	, mScriptEngine(this), mPmHandlerNpc(nullptr)
@@ -55,20 +54,20 @@ TServer::TServer(CString pName)
 	atexit(SDL_Quit);
 
 	// This has the full path to the server directory.
-	serverPath = CString() << getHomePath() << "servers/" << name << "/";
+	serverPath = CString() << getHomePath() << "data/"; // << "servers/" << name << "/";
 	CFileSystem::fixPathSeparators(&serverPath);
 
 	// Set up the log files.
-	CString logPath = serverPath.remove(0, getHomePath().length());
+	CString logPath = CString() << getHomePath();
 	CString npcLogPath = CString() << logPath << "logs/npclog.txt";
 	CString rcLogPath = CString() << logPath << "logs/rclog.txt";
-	CString serverLogPath = CString() << logPath << "logs/serverlog.txt";
+	CString clientLogPath = CString() << logPath << "logs/clientlog.txt";
 	CFileSystem::fixPathSeparators(&npcLogPath);
 	CFileSystem::fixPathSeparators(&rcLogPath);
-	CFileSystem::fixPathSeparators(&serverLogPath);
+	CFileSystem::fixPathSeparators(&clientLogPath);
 	npclog.setFilename(npcLogPath);
 	rclog.setFilename(rcLogPath);
-	serverlog.setFilename(serverLogPath);
+	clientLog.setFilename(clientLogPath);
 
 #ifdef V8NPCSERVER
 	CString scriptPath = CString() << logPath << "logs/scriptlog.txt";
@@ -76,21 +75,27 @@ TServer::TServer(CString pName)
 	scriptlog.setFilename(scriptPath);
 #endif
 
+#ifndef __AMIGA__
 	// Announce ourself to other classes.
 	serverlist.setServer(this);
+#endif
 	for (auto & i : filesystem)
 		i.setServer(this);
 	filesystem_accounts.setServer(this);
 }
 
-TServer::~TServer()
+TClient::~TClient()
 {
 	fps.stop();
 
 	cleanup();
 }
 
-int TServer::init(const CString& serverip, const CString& serverport, const CString& localip, const CString& serverinterface)
+int TClient::init(
+#ifndef __AMIGA__
+		const CString& serverip, const CString& serverport, const CString& localip, const CString& serverinterface
+#endif
+)
 {
 	// Player ids 0 and 1 break things.  NPC id 0 breaks things.
 	// Don't allow anything to have one of those ids.
@@ -102,16 +107,11 @@ int TServer::init(const CString& serverip, const CString& serverport, const CStr
 
 	fps.start();
 
-	for (auto & file : *filesystem[0].getFileList()) {
-		if (file.first.find(".gani"))
-			TAnimation::find(file.first.text(), this);
-	}
-
 #ifdef V8NPCSERVER
 	// Initialize the Script Engine
 	if (!mScriptEngine.Initialize())
 	{
-		serverlog.out("[%s] ** [Error] Could not initialize script engine.\n", name.text());
+		clientLog.out("[%s] ** [Error] Could not initialize script engine.\n");
 		// TODO(joey): new error number? log is probably enough
 		return ERR_SETTINGS;
 	}
@@ -121,6 +121,30 @@ int TServer::init(const CString& serverip, const CString& serverport, const CStr
 	int ret = loadConfigFiles();
 	if (ret) return ret;
 
+	setUpLocalPlayer();
+
+	gameWindow->init();
+/*
+	for (auto & file : *filesystem[0].getFileList()) {
+		if (file.first.find(".gani"))
+			TAnimation::find(file.first.text(), this);
+	}
+*/
+	clientLog.out("Loading images:\n");
+
+	for (auto & file : *filesystem[0].getFileList()) {
+		//if (file.first.find(".gani"))
+		//	TAnimation::find(file.first.text(), this);
+
+		if (file.first.find(".gif") > 0 || file.first.find(".png") > 0 || file.first.find(".jpg") > 0) {
+			clientLog.out("\t%s\n", file.first.text());
+			gameWindow->drawText(file.first.text());
+
+			TImage::find(file.first.text(), this, true);
+		}
+	}
+
+#ifndef __AMIGA__
 	// If an override serverip and serverport were specified, fix the options now.
 	if (!serverip.isEmpty())
 		settings.addKey("serverip", serverip);
@@ -159,7 +183,7 @@ int TServer::init(const CString& serverip, const CString& serverport, const CStr
 		serverlog.out("[%s] ** [Error] Could not connect listening socket...\n", name.text());
 		return ERR_LISTEN;
 	}
-
+#endif
 
 #ifdef UPNP
 	// Start a UPNP thread.  It will try to set a UPNP port forward in the background.
@@ -178,14 +202,6 @@ int TServer::init(const CString& serverip, const CString& serverport, const CStr
 	mNpcServer->setHeadImage(settings.getStr("staffhead", "head25.png"));
 	mNpcServer->setLoaded(true);	// can't guarantee this, so forcing it
 
-	localPlayer = new TPlayer(this, nullptr, 2);
-	localPlayer->setType(PLTYPE_CLIENT);
-	localPlayer->loadAccount("localplayer");
-	//localPlayer->setHeadImage(settings.getStr("staffhead", "head25.png"));
-	localPlayer->setLoaded(true);
-	localPlayer->warp(localPlayer->getLevelName(),localPlayer->getX(), localPlayer->getY(), -1);
-	localPlayer->setLocalPlayer(true);
-
 
 	// TODO(joey): Update this when server options is changed?
 	// Set nickname, and append (Server) - required!
@@ -197,10 +213,10 @@ int TServer::init(const CString& serverip, const CString& serverport, const CStr
 
 	// Add npc-server to playerlist
 	addPlayer(mNpcServer);
-	addPlayer(localPlayer);
-
 #endif
 
+
+#ifndef __AMIGA__
 	// Connect to the serverlist.
 	serverlog.out("[%s]      Initializing serverlist socket.\n", name.text());
 	if (!serverlist.init(settings.getStr("listip"), settings.getStr("listport")))
@@ -213,13 +229,32 @@ int TServer::init(const CString& serverip, const CString& serverport, const CStr
 	// Register ourself with the socket manager.
 	sockManager.registerSocket((CSocketStub*)this);
 	sockManager.registerSocket((CSocketStub*)&serverlist);
+#endif
 
-	gameWindow->init();
+
 	return 0;
 }
 
-// Called when the TServer is put into its own thread.
-void TServer::operator()()
+void TClient::log(const CString format, ...) {
+	va_list s_format_v;
+
+	va_start(s_format_v, format);
+	clientLog.out(format, s_format_v);
+	va_end(s_format_v);
+}
+
+void TClient::setUpLocalPlayer() {
+	localPlayer = new TPlayer(this, nullptr, 2);
+	localPlayer->setType(PLTYPE_CLIENT);
+	localPlayer->loadAccount("localplayer");
+	localPlayer->setLoaded(true);
+	localPlayer->warp(localPlayer->getLevelName(), localPlayer->getX(), localPlayer->getY(), -1);
+	localPlayer->setLocalPlayer(true);
+	addPlayer(localPlayer);
+}
+
+// Called when the TClient is put into its own thread.
+void TClient::operator()()
 {
 	running = true;
 	while (running)
@@ -235,7 +270,11 @@ void TServer::operator()()
 		{
 			doRestart = false;
 			cleanup();
-			int ret = init(overrideIP, overridePort, overrideLocalIP, overrideInterface);
+			int ret = init(
+#ifndef __AMIGA__
+					overrideIP, overridePort, overrideLocalIP, overrideInterface
+#endif
+					);
 			if (ret != 0)
 				break;
 		}
@@ -246,7 +285,7 @@ void TServer::operator()()
 	cleanup();
 }
 
-void TServer::cleanupDeletedPlayers()
+void TClient::cleanupDeletedPlayers()
 {
 	if (deletedPlayers.empty()) return;
 	for (auto i = deletedPlayers.begin(); i != deletedPlayers.end();)
@@ -300,9 +339,10 @@ void TServer::cleanupDeletedPlayers()
 			TPlayer* p = *j;
 			if (p == player)
 			{
+#ifndef __AMIGA__
 				// Unregister the player.
 				sockManager.unregisterSocket(p);
-
+#endif
 				delete p;
 				j = playerList.erase(j);
 			}
@@ -314,7 +354,7 @@ void TServer::cleanupDeletedPlayers()
 	//deletedPlayers.clear();
 }
 
-void TServer::cleanup()
+void TClient::cleanup()
 {
 	// Close our UPNP port forward.
 	// First, make sure the thread has completed already.
@@ -386,24 +426,28 @@ void TServer::cleanup()
 	mScriptEngine.Cleanup();
 #endif
 
+#ifndef __AMIGA__
 	playerSock.disconnect();
 	serverlist.getSocket()->disconnect();
 
 	// Clean up the socket manager.  Pass false so we don't cause a crash.
 	sockManager.cleanup(false);
+#endif
 }
 
-void TServer::restart()
+void TClient::restart()
 {
 	doRestart = true;
 }
 
 constexpr std::chrono::nanoseconds timestep(std::chrono::milliseconds(50));
 
-bool TServer::doMain()
+bool TClient::doMain()
 {
+#ifndef __AMIGA__
 	// Update our socket manager.
 	sockManager.update(0, 5000);		// 5ms
+#endif
 
 	// Current time
 	auto currentTimer = std::chrono::high_resolution_clock::now();
@@ -434,6 +478,7 @@ bool TServer::doMain()
 	{
 		lastTimer = currentTimer;
 		doTimedEvents();
+
 	}
 
 	if (gameWindow != nullptr)
@@ -442,11 +487,12 @@ bool TServer::doMain()
 	return true;
 }
 
-bool TServer::doTimedEvents()
+bool TClient::doTimedEvents()
 {
+#ifndef __AMIGA__
 	// Do serverlist events.
 	serverlist.doTimedEvents();
-
+#endif
 	// Do player events.
 	{
 		for (auto & i : playerList)
@@ -494,11 +540,13 @@ bool TServer::doTimedEvents()
 		lastNWTimer = lastTimer;
 		sendPacketToAll(CString() >> (char)PLO_NEWWORLDTIME << CString().writeGInt4(getNWTime()));
 
+#ifndef __AMIGA__
 		// TODO(joey): no no no no no no no this is not how it is done! a server will announce to the serverlist a new player
 		// and then it will be added! you can't just spam everything!!!
 		TServerList* list = this->getServerList();
 		if (list)
 			list->sendPacket(CString() >> (char)SVO_REQUESTLIST >> (short)0 << CString(CString() << "_" << "\n" << "GraalEngine" << "\n" << "lister" << "\n" << "simpleserverlist" << "\n").gtokenizeI());
+#endif
 	}
 
 	// Stuff that happens every minute.
@@ -579,7 +627,8 @@ bool TServer::doTimedEvents()
 	return true;
 }
 
-bool TServer::onRecv()
+#ifndef __AMIGA__
+bool TClient::onRecv()
 {
 	// Create socket.
 	CSocket *newSock = playerSock.accept();
@@ -601,10 +650,10 @@ bool TServer::onRecv()
 
 	return true;
 }
-
+#endif
 /////////////////////////////////////////////////////
 
-void TServer::loadAllFolders()
+void TClient::loadAllFolders()
 {
 	for (auto & i : filesystem)
 		i.clear();
@@ -618,7 +667,7 @@ void TServer::loadAllFolders()
 	}
 }
 
-void TServer::loadFolderConfig()
+void TClient::loadFolderConfig()
 {
 	for (auto & i : filesystem)
 		i.clear();
@@ -652,107 +701,113 @@ void TServer::loadFolderConfig()
 		CFileSystem* fs = getFileSystemByType(type);
 
 		// Add it to the appropriate file system.
-		if (fs != 0)
+		if (fs != nullptr)
 		{
 			fs->addDir(dir, wildcard);
-			serverlog.out("[%s]        adding %s [%s] to %s\n", name.text(), dir.text(), wildcard.text(), type.text());
+			clientLog.out("\tadding %s [%s] to %s\n", dir.text(), wildcard.text(), type.text());
 		}
 		filesystem[0].addDir(dir, wildcard);
 	}
 }
 
-int TServer::loadConfigFiles()
+int TClient::loadConfigFiles()
 {
 	// TODO(joey): /reloadconfig reloads this, but things like server flags, weapons and npcs probably shouldn't be reloaded.
 	//	Move them out of here?
-	serverlog.out("[%s] :: Loading server configuration...\n", name.text());
+	clientLog.out(":: Loading configuration...\n");
 
 	// Load Settings
-	serverlog.out("[%s]      Loading settings...\n", name.text());
+	clientLog.out("Loading settings...\n");
 	loadSettings();
-
+#ifndef __AMIGA__
 	// Load Admin Settings
-	serverlog.out("[%s]      Loading admin settings...\n", name.text());
+	clientLog.out("[%s]      Loading admin settings...\n");
 	loadAdminSettings();
 
 	// Load allowed versions.
-	serverlog.out("[%s]      Loading allowed client versions...\n", name.text());
+	clientLog.out("[%s]      Loading allowed client versions...\n");
 	loadAllowedVersions();
+#endif
 
 	// Load folders config and file system.
-	serverlog.out("[%s]      Folder config: ", name.text());
+	clientLog.out("Folder config: ");
 	if ( !settings.getBool("nofoldersconfig", false))
 	{
-		serverlog.append("ENABLED\n");
-	} else serverlog.append("disabled\n");
-	serverlog.out("[%s]      Loading file system...\n", name.text());
+		clientLog.append("Enabled\n");
+	} else clientLog.append("Disabled\n");
+	clientLog.out("Loading file system...\n");
 	loadFileSystem();
 
+#ifndef __AMIGA__
 	// Load server flags.
-	serverlog.out("[%s]      Loading serverflags.txt...\n", name.text());
+	clientLog.out("\t\tLoading serverflags.txt...\n");
 	loadServerFlags();
 
 	// Load server message.
-	serverlog.out("[%s]      Loading config/servermessage.html...\n", name.text());
+	clientLog.out("\t\tLoading config/servermessage.html...\n");
 	loadServerMessage();
 
 	// Load IP bans.
-	serverlog.out("[%s]      Loading config/ipbans.txt...\n", name.text());
+	clientLog.out("\t\tLoading config/ipbans.txt...\n");
 	loadIPBans();
+#endif
 
 	// Load weapons.
-	serverlog.out("[%s]      Loading weapons...\n", name.text());
+	clientLog.out("Loading weapons...\n");
 	loadWeapons(true);
 
 	// Load classes.
-	serverlog.out("[%s]      Loading classes...\n", name.text());
+	clientLog.out("Loading classes...\n");
 	loadClasses(true);
 
 	// Load maps.
-	serverlog.out("[%s]      Loading maps...\n", name.text());
+	clientLog.out("Loading maps...\n");
 	loadMaps(true);
 
 #ifdef V8NPCSERVER
 	// Load database npcs.
-	serverlog.out("[%s]      Loading npcs...\n", name.text());
+	serverlog.out("Loading npcs...\n");
 	loadNpcs(true);
 #endif
 
 	// Load translations.
-	serverlog.out("[%s]      Loading translations...\n", name.text());
+	clientLog.out("Loading translations...\n");
 	loadTranslations();
 
 	// Load word filter.
-	serverlog.out("[%s]      Loading word filter...\n", name.text());
+	clientLog.out("Loading word filter...\n");
 	loadWordFilter();
 
 	return 0;
 }
 
-void TServer::loadSettings()
+void TClient::loadSettings()
 {
 	settings.setSeparator("=");
 	settings.loadFile(CString() << serverPath << "config/serveroptions.txt");
 	if (!settings.isOpened())
-		serverlog.out("[%s] ** [Error] Could not open config/serveroptions.txt.  Will use default config.\n", name.text());
+		clientLog.out("\t** [Error] Could not open config/serveroptions.txt.  Will use default config.\n");
 
 	// Load status list.
 	statusList = settings.getStr("playerlisticons", "Online,Away,DND,Eating,Hiding,No PMs,RPing,Sparring,PKing").tokenize(",");
-
+#ifndef __AMIGA__
 	// Send our ServerHQ info in case we got changed the staffonly setting.
 	getServerList()->sendServerHQ();
+#endif
 }
 
-void TServer::loadAdminSettings()
+void TClient::loadAdminSettings()
 {
 	adminsettings.setSeparator("=");
 	adminsettings.loadFile(CString() << serverPath << "config/adminconfig.txt");
 	if (!adminsettings.isOpened())
-		serverlog.out("[%s] ** [Error] Could not open config/adminconfig.txt.  Will use default config.\n", name.text());
+		clientLog.out("\t** [Error] Could not open config/adminconfig.txt.  Will use default config.\n");
+#ifndef __AMIGA__
 	else getServerList()->sendServerHQ();
+#endif
 }
 
-void TServer::loadAllowedVersions()
+void TClient::loadAllowedVersions()
 {
 	CString versions;
 	versions.load(CString() << serverPath << "config/allowedversions.txt");
@@ -782,7 +837,7 @@ void TServer::loadAllowedVersions()
 	}
 }
 
-void TServer::loadFileSystem()
+void TClient::loadFileSystem()
 {
 	for (auto & i : filesystem)
 		i.clear();
@@ -794,26 +849,26 @@ void TServer::loadFileSystem()
 		loadFolderConfig();
 }
 
-void TServer::loadServerFlags()
+void TClient::loadServerFlags()
 {
 	std::vector<CString> lines = CString::loadToken(CString() << serverPath << "serverflags.txt", "\n", true);
 	for (auto & line : lines)
 		this->setFlag(line, false);
 }
 
-void TServer::loadServerMessage()
+void TClient::loadServerMessage()
 {
 	servermessage.load(CString() << serverPath << "config/servermessage.html");
 	servermessage.removeAllI("\r");
 	servermessage.replaceAllI("\n", " ");
 }
 
-void TServer::loadIPBans()
+void TClient::loadIPBans()
 {
 	ipBans = CString::loadToken(CString() << serverPath << "config/ipbans.txt", "\n", true);
 }
 
-void TServer::loadClasses(bool print)
+void TClient::loadClasses(bool print)
 {
 	CFileSystem scriptFS(this);
 	scriptFS.addDir("scripts", "*.txt");
@@ -828,7 +883,7 @@ void TServer::loadClasses(bool print)
 	}
 }
 
-void TServer::loadWeapons(bool print)
+void TClient::loadWeapons(bool print)
 {
 	CFileSystem weaponFS(this);
 	weaponFS.addDir("weapons", "weapon*.txt");
@@ -843,7 +898,7 @@ void TServer::loadWeapons(bool print)
 		if (weaponList.find(weapon->getName()) == weaponList.end())
 		{
 			weaponList[weapon->getName()] = weapon;
-			if (print) serverlog.out("[%s]        %s\n", name.text(), weapon->getName().text());
+			if (print) clientLog.out("\t%s\n", weapon->getName().text());
 		}
 		else
 		{
@@ -854,13 +909,13 @@ void TServer::loadWeapons(bool print)
 				delete w;
 				weaponList[weapon->getName()] = weapon;
 				updateWeaponForPlayers(weapon);
-				if (print) serverlog.out("[%s]        %s [updated]\n", name.text(), weapon->getName().text());
+				if (print) clientLog.out("\t%s [updated]\n", weapon->getName().text());
 			}
 			else
 			{
 				// TODO(joey): even though were deleting the weapon because its skipped, its still queuing its script action
 				//	and attempting to execute it. Technically the code needs to be run again though, will fix soon.
-				if (print) serverlog.out("[%s]        %s [skipped]\n", name.text(), weapon->getName().text());
+				if (print) clientLog.out("\t%s [skipped]\n", weapon->getName().text());
 				delete weapon;
 			}
 		}
@@ -876,7 +931,7 @@ void TServer::loadWeapons(bool print)
 	if (weaponList.find("joltbomb") == weaponList.end()) weaponList["joltbomb"] = new TWeapon(this, TLevelItem::getItemId("joltbomb"));
 }
 
-void TServer::loadMaps(bool print)
+void TClient::loadMaps(bool print)
 {
 	// Remove existing maps.
 	for (auto i = mapList.begin(); i != mapList.end(); )
@@ -902,12 +957,12 @@ void TServer::loadMaps(bool print)
 		TMap* gmap = new TMap(MAPTYPE_GMAP);
 		if ( !gmap->load(CString() << (CString)i << ".gmap", this))
 		{
-			if (print) serverlog.out(CString() << "[" << name << "] " << "** [Error] Could not load " << i << ".gmap" << "\n");
+			if (print) clientLog.out(CString() << "[" << name << "] " << "** [Error] Could not load " << i << ".gmap" << "\n");
 			delete gmap;
 			continue;
 		}
 
-		if (print) serverlog.out("[%s]        [gmap] %s\n", name.text(), i.text());
+		if (print) clientLog.out("\t[gmap] %s\n", i.text());
 		mapList.push_back(gmap);
 	}
 
@@ -922,12 +977,12 @@ void TServer::loadMaps(bool print)
 		TMap* bigmap = new TMap(MAPTYPE_BIGMAP);
 		if ( !bigmap->load((i).trim(), this))
 		{
-			if (print) serverlog.out(CString() << "[" << name << "] " << "** [Error] Could not load " << i << "\n");
+			if (print) clientLog.out(CString() << "[" << name << "] " << "** [Error] Could not load " << i << "\n");
 			delete bigmap;
 			continue;
 		}
 
-		if (print) serverlog.out("[%s]        [bigmap] %s\n", name.text(), i.text());
+		if (print) clientLog.out("\t[bigmap] %s\n", i.text());
 		mapList.push_back(bigmap);
 	}
 
@@ -953,18 +1008,18 @@ void TServer::loadMaps(bool print)
 		// Load the map.
 		if ( !gmap->load(CString() << groupmap, this))
 		{
-			if (print) serverlog.out(CString() << "[" << name << "] " << "** [Error] Could not load " << groupmap << "\n");
+			if (print) clientLog.out(CString() << "[" << name << "] " << "** [Error] Could not load " << groupmap << "\n");
 			delete gmap;
 			continue;
 		}
 
-		if (print) serverlog.out("[%s]        [group map] %s\n", name.text(), groupmap.text());
+		if (print) clientLog.out("\t[group map] %s\n", groupmap.text());
 		mapList.push_back(gmap);
 	}
 }
 
 #ifdef V8NPCSERVER
-void TServer::loadNpcs(bool print)
+void TClient::loadNpcs(bool print)
 {
 	CFileSystem npcFS(this);
 	npcFS.addDir("npcs", "npc*.txt");
@@ -1011,17 +1066,17 @@ void TServer::loadNpcs(bool print)
 }
 #endif
 
-void TServer::loadTranslations()
+void TClient::loadTranslations()
 {
 	this->TS_Reload();
 }
 
-void TServer::loadWordFilter()
+void TClient::loadWordFilter()
 {
 	wordFilter.load(CString() << serverPath << "config/rules.txt");
 }
 
-void TServer::saveServerFlags()
+void TClient::saveServerFlags()
 {
 	CString out;
 	for (auto & mServerFlag : mServerFlags)
@@ -1029,7 +1084,7 @@ void TServer::saveServerFlags()
 	out.save(CString() << serverPath << "serverflags.txt");
 }
 
-void TServer::saveWeapons()
+void TClient::saveWeapons()
 {
 	CFileSystem weaponFS(this);
 	weaponFS.addDir("weapons", "weapon*.txt");
@@ -1055,7 +1110,7 @@ void TServer::saveWeapons()
 
 #ifdef V8NPCSERVER
 
-void TServer::saveNpcs()
+void TClient::saveNpcs()
 {
 	for (auto npc : npcList)
 	{
@@ -1064,7 +1119,7 @@ void TServer::saveNpcs()
 	}
 }
 
-std::vector<std::pair<double, std::string>> TServer::calculateNpcStats()
+std::vector<std::pair<double, std::string>> TClient::calculateNpcStats()
 {
 	std::vector<std::pair<double, std::string>> script_profiles;
 
@@ -1109,14 +1164,14 @@ std::vector<std::pair<double, std::string>> TServer::calculateNpcStats()
 	return script_profiles;
 }
 
-void TServer::reportScriptException(const ScriptRunError& error)
+void TClient::reportScriptException(const ScriptRunError& error)
 {
 	std::string error_message = error.getErrorString();
 	sendToNC(error_message);
 	getScriptLog().out(error_message + "\n");
 }
 
-void TServer::reportScriptException(const std::string& error_message)
+void TClient::reportScriptException(const std::string& error_message)
 {
 	sendToNC(error_message);
 	getScriptLog().out(error_message + "\n");
@@ -1126,7 +1181,7 @@ void TServer::reportScriptException(const std::string& error_message)
 
 /////////////////////////////////////////////////////
 
-TPlayer* TServer::getPlayer(const unsigned short id, int type) const
+TPlayer* TClient::getPlayer(const unsigned short id, int type) const
 {
 	if (id >= (unsigned short)playerIds.size())
 		return nullptr;
@@ -1141,7 +1196,7 @@ TPlayer* TServer::getPlayer(const unsigned short id, int type) const
 	return playerIds[id];
 }
 
-TPlayer* TServer::getPlayer(const CString& account, int type) const
+TPlayer* TClient::getPlayer(const CString& account, int type) const
 {
 	for (auto i : playerList)
 	{
@@ -1162,7 +1217,7 @@ TPlayer* TServer::getPlayer(const CString& account, int type) const
 }
 
 /*
-TPlayer* TServer::getPlayer(const unsigned short id, bool includeRC) const
+TPlayer* TClient::getPlayer(const unsigned short id, bool includeRC) const
 {
 	if (id >= (unsigned short)playerIds.size()) return 0;
 	if (playerIds[id] == nullptr) return 0;
@@ -1171,7 +1226,7 @@ TPlayer* TServer::getPlayer(const unsigned short id, bool includeRC) const
 	return playerIds[id];
 }
 
-TPlayer* TServer::getPlayer(const CString& account, bool includeRC) const
+TPlayer* TClient::getPlayer(const CString& account, bool includeRC) const
 {
 	for (std::vector<TPlayer *>::const_iterator i = playerList.begin(); i != playerList.end(); ++i)
 	{
@@ -1189,7 +1244,7 @@ TPlayer* TServer::getPlayer(const CString& account, bool includeRC) const
 	return 0;
 }
 
-TPlayer* TServer::getRC(const unsigned short id) const
+TPlayer* TClient::getRC(const unsigned short id) const
 {
 	if (id >= (unsigned short)playerIds.size()) return 0;
 	if (playerIds[id] == nullptr) return 0;
@@ -1197,7 +1252,7 @@ TPlayer* TServer::getRC(const unsigned short id) const
 	return playerIds[id];
 }
 
-TPlayer* TServer::getRC(const CString& account) const
+TPlayer* TClient::getRC(const CString& account) const
 {
 	for (std::vector<TPlayer *>::const_iterator i = playerList.begin(); i != playerList.end(); ++i)
 	{
@@ -1213,12 +1268,12 @@ TPlayer* TServer::getRC(const CString& account) const
 }
 */
 
-TLevel* TServer::getLevel(const CString& pLevel)
+TLevel* TClient::getLevel(const CString& pLevel)
 {
 	return TLevel::findLevel(pLevel, this);
 }
 
-TMap* TServer::getMap(const CString& name) const
+TMap* TClient::getMap(const CString& name) const
 {
 	for (auto map : mapList)
 	{
@@ -1228,7 +1283,7 @@ TMap* TServer::getMap(const CString& name) const
 	return nullptr;
 }
 
-TMap* TServer::getMap(const TLevel* pLevel) const
+TMap* TClient::getMap(const TLevel* pLevel) const
 {
 	if (pLevel == nullptr) return nullptr;
 
@@ -1240,12 +1295,12 @@ TMap* TServer::getMap(const TLevel* pLevel) const
 	return nullptr;
 }
 
-TWeapon* TServer::getWeapon(const CString& name)
+TWeapon* TClient::getWeapon(const CString& name)
 {
 	return (weaponList.find(name) != weaponList.end() ? weaponList[name] : nullptr);
 }
 
-CString TServer::getFlag(const std::string& pFlagName)
+CString TClient::getFlag(const std::string& pFlagName)
 {
 #ifdef V8NPCSERVER
 	if (mServerFlags.find(pFlagName) != mServerFlags.end())
@@ -1256,7 +1311,7 @@ CString TServer::getFlag(const std::string& pFlagName)
 #endif
 }
 
-CFileSystem* TServer::getFileSystemByType(CString& type)
+CFileSystem* TClient::getFileSystemByType(CString& type)
 {
 	// Find out the filesystem.
 	int fs = -1;
@@ -1276,7 +1331,7 @@ CFileSystem* TServer::getFileSystemByType(CString& type)
 }
 
 #ifdef V8NPCSERVER
-void TServer::assignNPCName(TNPC *npc, const std::string& name)
+void TClient::assignNPCName(TNPC *npc, const std::string& name)
 {
 	std::string newName = name;
 	int num = 0;
@@ -1287,14 +1342,14 @@ void TServer::assignNPCName(TNPC *npc, const std::string& name)
 	npcNameList[newName] = npc;
 }
 
-void TServer::removeNPCName(TNPC *npc)
+void TClient::removeNPCName(TNPC *npc)
 {
 	auto npcIter = npcNameList.find(npc->getName());
 	if (npcIter != npcNameList.end())
 		npcNameList.erase(npcIter);
 }
 
-TNPC* TServer::addServerNpc(int npcId, float pX, float pY, TLevel *pLevel, bool sendToPlayers)
+TNPC* TClient::addServerNpc(int npcId, float pX, float pY, TLevel *pLevel, bool sendToPlayers)
 {
 	// Force database npc ids to be >= 1000
 	if (npcId < 1000)
@@ -1336,7 +1391,7 @@ TNPC* TServer::addServerNpc(int npcId, float pX, float pY, TLevel *pLevel, bool 
 	return newNPC;
 }
 
-void TServer::handlePM(TPlayer * player, const CString & message)
+void TClient::handlePM(TPlayer * player, const CString & message)
 {
 	if (!mPmHandlerNpc)
 	{
@@ -1356,7 +1411,7 @@ void TServer::handlePM(TPlayer * player, const CString & message)
 	mScriptEngine.RegisterNpcUpdate(mPmHandlerNpc);
 }
 
-void TServer::setPMFunction(TNPC *npc, IScriptFunction *function)
+void TClient::setPMFunction(TNPC *npc, IScriptFunction *function)
 {
 	if (npc == nullptr || function == nullptr)
 	{
@@ -1371,7 +1426,7 @@ void TServer::setPMFunction(TNPC *npc, IScriptFunction *function)
 
 #endif
 
-TNPC* TServer::addNPC(const CString& pImage, const CString& pScript, float pX, float pY, TLevel* pLevel, bool pLevelNPC, bool sendToPlayers)
+TNPC* TClient::addNPC(const CString& pImage, const CString& pScript, float pX, float pY, TLevel* pLevel, bool pLevelNPC, bool sendToPlayers)
 {
 	// New Npc
 	TNPC* newNPC = new TNPC(pImage, pScript, pX, pY, this, pLevel, pLevelNPC);
@@ -1410,7 +1465,7 @@ TNPC* TServer::addNPC(const CString& pImage, const CString& pScript, float pX, f
 	return newNPC;
 }
 
-bool TServer::deleteNPC(const unsigned int pId, bool eraseFromLevel)
+bool TClient::deleteNPC(const unsigned int pId, bool eraseFromLevel)
 {
 	// Grab the NPC.
 	TNPC* npc = getNPC(pId);
@@ -1418,7 +1473,7 @@ bool TServer::deleteNPC(const unsigned int pId, bool eraseFromLevel)
 
 }
 
-bool TServer::deleteNPC(TNPC* npc, bool eraseFromLevel)
+bool TClient::deleteNPC(TNPC* npc, bool eraseFromLevel)
 {
 	if (npc == nullptr) return false;
 	if (npc->getId() >= npcIds.size()) return false;
@@ -1484,7 +1539,7 @@ bool TServer::deleteNPC(TNPC* npc, bool eraseFromLevel)
 	return true;
 }
 
-bool TServer::deleteClass(const std::string& className)
+bool TClient::deleteClass(const std::string& className)
 {
 	auto classIter = classList.find(className);
 	if (classIter == classList.end())
@@ -1498,7 +1553,7 @@ bool TServer::deleteClass(const std::string& className)
 	return true;
 }
 
-void TServer::updateClass(const std::string& className, const std::string& classCode)
+void TClient::updateClass(const std::string& className, const std::string& classCode)
 {
 	// TODO(joey): filenames...
 	classList[className] = classCode;
@@ -1510,7 +1565,7 @@ void TServer::updateClass(const std::string& className, const std::string& class
 	fileData.save(filePath);
 }
 
-unsigned int TServer::getFreePlayerId()
+unsigned int TClient::getFreePlayerId()
 {
 	unsigned int newId = 0;
 	for (unsigned int i = 2; i < playerIds.size(); ++i)
@@ -1530,7 +1585,7 @@ unsigned int TServer::getFreePlayerId()
 	return newId;
 }
 
-bool TServer::addPlayer(TPlayer *player, unsigned int id)
+bool TClient::addPlayer(TPlayer *player, unsigned int id)
 {
 	// No id was passed, so we will fetch one
 	if (id == UINT_MAX)
@@ -1553,7 +1608,7 @@ bool TServer::addPlayer(TPlayer *player, unsigned int id)
 	return true;
 }
 
-bool TServer::deletePlayer(TPlayer* player)
+bool TClient::deletePlayer(TPlayer* player)
 {
 	if (player == nullptr)
 		return true;
@@ -1561,15 +1616,18 @@ bool TServer::deletePlayer(TPlayer* player)
 	// Add the player to the set of players to delete.
 	if ( deletedPlayers.insert(player).second )
 	{
+#ifndef __AMIGA__
 		// Remove the player from the serverlist.
 		getServerList()->remPlayer(player->getAccountName(), player->getType());
+#endif
 	}
 
 	return true;
 }
 
-void TServer::playerLoggedIn(TPlayer *player)
+void TClient::playerLoggedIn(TPlayer *player)
 {
+#ifndef __AMIGA__
 	// Tell the serverlist that the player connected.
 	getServerList()->addPlayer(player);
 
@@ -1581,15 +1639,16 @@ void TServer::playerLoggedIn(TPlayer *player)
 		npcObject->queueNpcAction("npc.playerlogin", player);
 	}
 #endif
+#endif
 }
 
-unsigned int TServer::getNWTime() const
+unsigned int TClient::getNWTime() const
 {
 	// timevar apparently subtracts 11078 days from time(0) then divides by 5.
 	return ((unsigned int)time(nullptr) - 11078 * 24 * 60 * 60) / 5;
 }
 
-bool TServer::isIpBanned(const CString& ip)
+bool TClient::isIpBanned(const CString& ip)
 {
 	for (auto & ipBan : ipBans)
 	{
@@ -1598,7 +1657,7 @@ bool TServer::isIpBanned(const CString& ip)
 	return false;
 }
 
-void TServer::logToFile(const std::string & fileName, const std::string & message)
+void TClient::logToFile(const std::string & fileName, const std::string & message)
 {
 	CString fileNamePath = CString() << getServerPath().remove(0, getHomePath().length()) << "logs/";
 
@@ -1614,9 +1673,9 @@ void TServer::logToFile(const std::string & fileName, const std::string & messag
 }
 
 /*
-	TServer: Server Flag Management
+	TClient: Server Flag Management
 */
-bool TServer::deleteFlag(const std::string& pFlagName, bool pSendToPlayers)
+bool TClient::deleteFlag(const std::string& pFlagName, bool pSendToPlayers)
 {
 	if ( settings.getBool("dontaddserverflags", false))
 		return false;
@@ -1633,14 +1692,14 @@ bool TServer::deleteFlag(const std::string& pFlagName, bool pSendToPlayers)
 	return false;
 }
 
-bool TServer::setFlag(CString pFlag, bool pSendToPlayers)
+bool TClient::setFlag(CString pFlag, bool pSendToPlayers)
 {
 	std::string flagName = pFlag.readString("=").text();
 	CString flagValue = pFlag.readString("");
 	return this->setFlag(flagName, (flagValue.isEmpty() ? "1" : flagValue), pSendToPlayers);
 }
 
-bool TServer::setFlag(const std::string& pFlagName, const CString& pFlagValue, bool pSendToPlayers)
+bool TClient::setFlag(const std::string& pFlagName, const CString& pFlagValue, bool pSendToPlayers)
 {
 	if ( settings.getBool("dontaddserverflags", false))
 		return false;
@@ -1669,7 +1728,7 @@ bool TServer::setFlag(const std::string& pFlagName, const CString& pFlagValue, b
 /*
 	Packet-Sending Functions
 */
-void TServer::sendPacketToAll(CString pPacket, TPlayer *pPlayer, bool pNpcServer) const
+void TClient::sendPacketToAll(CString pPacket, TPlayer *pPlayer, bool pNpcServer) const
 {
 	for (auto i : playerList)
 	{
@@ -1679,7 +1738,7 @@ void TServer::sendPacketToAll(CString pPacket, TPlayer *pPlayer, bool pNpcServer
 	}
 }
 
-void TServer::sendPacketToLevel(CString pPacket, TMap* pMap, TLevel* pLevel, TPlayer* pPlayer, bool onlyGmap) const
+void TClient::sendPacketToLevel(CString pPacket, TMap* pMap, TLevel* pLevel, TPlayer* pPlayer, bool onlyGmap) const
 {
 	if (pMap == nullptr || (onlyGmap && pMap->getType() == MAPTYPE_BIGMAP))// || pLevel->isGroupLevel())
 	{
@@ -1723,7 +1782,7 @@ void TServer::sendPacketToLevel(CString pPacket, TMap* pMap, TLevel* pLevel, TPl
 	}
 }
 
-void TServer::sendPacketToLevel(CString pPacket, TMap* pMap, TPlayer* pPlayer, bool sendToSelf, bool onlyGmap) const
+void TClient::sendPacketToLevel(CString pPacket, TMap* pMap, TPlayer* pPlayer, bool sendToSelf, bool onlyGmap) const
 {
 	if (pPlayer->getLevel() == 0) return;
 
@@ -1779,7 +1838,7 @@ void TServer::sendPacketToLevel(CString pPacket, TMap* pMap, TPlayer* pPlayer, b
 	}
 }
 
-void TServer::sendPacketTo(int who, CString pPacket, TPlayer* pPlayer) const
+void TClient::sendPacketTo(int who, CString pPacket, TPlayer* pPlayer) const
 {
 	for (auto i : playerList)
 	{
@@ -1792,7 +1851,7 @@ void TServer::sendPacketTo(int who, CString pPacket, TPlayer* pPlayer) const
 /*
 	NPC-Server Functionality
 */
-bool TServer::NC_AddWeapon(TWeapon *pWeaponObj)
+bool TClient::NC_AddWeapon(TWeapon *pWeaponObj)
 {
 	if (pWeaponObj == nullptr)
 		return false;
@@ -1801,7 +1860,7 @@ bool TServer::NC_AddWeapon(TWeapon *pWeaponObj)
 	return true;
 }
 
-bool TServer::NC_DelWeapon(const CString& pWeaponName)
+bool TClient::NC_DelWeapon(const CString& pWeaponName)
 {
 	// Definitions
 	TWeapon *weaponObj = getWeapon(pWeaponName);
@@ -1828,7 +1887,7 @@ bool TServer::NC_DelWeapon(const CString& pWeaponName)
 	return true;
 }
 
-void TServer::updateWeaponForPlayers(TWeapon *pWeapon)
+void TClient::updateWeaponForPlayers(TWeapon *pWeapon)
 {
 	// Update Weapons
 	for (auto player : playerList)
@@ -1847,7 +1906,7 @@ void TServer::updateWeaponForPlayers(TWeapon *pWeapon)
 /*
 	Translation Functionality
 */
-bool TServer::TS_Load(const CString& pLanguage, const CString& pFileName)
+bool TClient::TS_Load(const CString& pLanguage, const CString& pFileName)
 {
 	// Load File
 	std::vector<CString> fileData = CString::loadToken(pFileName, "\n", true);
@@ -1900,12 +1959,12 @@ bool TServer::TS_Load(const CString& pLanguage, const CString& pFileName)
 	return true;
 }
 
-CString TServer::TS_Translate(const CString& pLanguage, const CString& pKey)
+CString TClient::TS_Translate(const CString& pLanguage, const CString& pKey)
 {
 	return mTranslationManager.translate(pLanguage.toLower().text(), pKey.text());
 }
 
-void TServer::TS_Reload()
+void TClient::TS_Reload()
 {
 	// Save Translations
 	this->TS_Save();
@@ -1923,7 +1982,7 @@ void TServer::TS_Reload()
 		this->TS_Load(removeExtension(i->first), i->second);
 }
 
-void TServer::TS_Save()
+void TClient::TS_Save()
 {
 	// Grab Translations
 	std::map<std::string, STRMAP> *languages = mTranslationManager.getTranslationList();

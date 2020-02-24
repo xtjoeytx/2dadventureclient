@@ -3,7 +3,7 @@
 #include <math.h>
 
 #include "IEnums.h"
-#include "TServer.h"
+#include "TClient.h"
 #include "TPlayer.h"
 #include "TWeapon.h"
 #include "TNPC.h"
@@ -207,7 +207,7 @@ bool TPlayer::msgPLI_NC_NPCFLAGSSET(CString& pPacket)
 	{
 		auto flagList = npc->getFlagList();
 		auto newFlags = npcFlags.tokenize("\n");
-		
+
 		CString addedFlagMsg, deletedFlagMsg;
 		std::unordered_map<std::string, CString> newFlagList;
 
@@ -325,7 +325,7 @@ bool TPlayer::msgPLI_NC_CLASSEDIT(CString& pPacket)
 
 	// {112}{class}
 	CString className = pPacket.readString("");
-	
+
 	CString classCode = server->getClass(className.text());
 
 	CString ret;
@@ -377,7 +377,7 @@ bool TPlayer::msgPLI_NC_CLASSDELETE(CString& pPacket)
 	}
 
 	std::string className = pPacket.readString("").text();
-	
+
 	CString logMsg;
 	if (server->deleteClass(className))
 	{
@@ -412,7 +412,7 @@ bool TPlayer::msgPLI_NC_LOCALNPCSGET(CString& pPacket)
 	if (npcLevel != nullptr)
 	{
 		CString npcDump;
-		// Variables dump from level mapname (level.nw) 
+		// Variables dump from level mapname (level.nw)
 		npcDump << "Variables dump from level " << npcLevel->getLevelName() << "\n";
 
 		auto npcList = npcLevel->getLevelNPCs();
@@ -447,7 +447,7 @@ bool TPlayer::msgPLI_NC_WEAPONLISTGET(CString& pPacket)
 		CString weaponName = it->second->getName();
 		ret >> (char)weaponName.length() << weaponName;
 	}
-	
+
 	sendPacket(ret);
 	return true;
 }
@@ -546,7 +546,7 @@ bool TPlayer::msgPLI_NC_WEAPONDELETE(CString& pPacket)
 
 	// {118}{weapon}
 	CString weaponName = pPacket.readString("");
-	
+
 	CString logMsg;
 	if (server->NC_DelWeapon(weaponName))
 		logMsg << "Weapon " << weaponName << " deleted by " << accountName << "\n";

@@ -5,16 +5,16 @@
 #include <mutex>
 #include "CString.h"
 
-class TServer;
+class TClient;
 class CFileSystem
 {
 	public:
 		CFileSystem();
-		CFileSystem(TServer* pServer);
+		CFileSystem(TClient* pServer);
 		~CFileSystem();
 		void clear();
 
-		void setServer(TServer* pServer) { server = pServer; }
+		void setServer(TClient* pServer) { server = pServer; }
 
 		void addDir(const CString& dir, const CString& wildcard = "*", bool forceRecursive = false);
 		void removeDir(const CString& dir);
@@ -31,16 +31,16 @@ class CFileSystem
 		int getFileSize(const CString& file) const;
 		std::map<CString, CString>* getFileList()	{ return &fileList; }
 		std::vector<CString>* getDirList()			{ return &dirList; }
-
-		mutable std::recursive_mutex* m_preventChange;
-
+#ifndef __AMIGA__
+		mutable recursive_mutex* m_preventChange;
+#endif
 		static void fixPathSeparators(CString* pPath);
 		static char getPathSeparator();
 
 	private:
 		void loadAllDirectories(const CString& directory, bool recursive = false);
 
-		TServer* server;
+		TClient* server;
 		CString basedir;
 		std::map<CString, CString> fileList;
 		std::vector<CString> dirList;
