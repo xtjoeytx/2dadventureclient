@@ -33,3 +33,4 @@ bin/data/world/images/*.jpg
 *.gmap
 bin/data/accounts/*
 bin/data/startuplog.txt
+bin/2dadventureclient

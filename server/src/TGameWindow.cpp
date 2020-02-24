@@ -33,25 +33,25 @@ static const Uint32 amask = 0xff000000;
 
 Uint32 lastTick;
 
-TGameWindow::TGameWindow(TClient* server) : server(server), tileset(nullptr) {
+TGameWindow::TGameWindow(TClient* server) : client(server), tileset(nullptr) {
 	createRenderer();
 
 	startTimer = std::chrono::high_resolution_clock::now();
 }
 
 void TGameWindow::init() {
-	tileset = TImage::find("zold_tiles_dusty_01.png", server, true);
+	tileset = TImage::find("zold_tiles_dusty_01.png", client, true);
 	if (tileset)
-		server->log("Tileset:\t%s\n", tileset->name.text());
+		client->log("Tileset:\t%s\n", tileset->name.text());
 	else {
-		server->log("\t** [Error] Could not open tileset\n");
+		client->log("\t** [Error] Could not open tileset\n");
 		exit(1);
 	}
 
 	/* start SDL_ttf */
 	if(TTF_Init()==-1)
 	{
-		server->log("\t** [Error] TTF_Init: %s\n", TTF_GetError());
+		client->log("\t** [Error] TTF_Init: %s\n", TTF_GetError());
 		exit(1);
 	}
 
@@ -61,12 +61,13 @@ void TGameWindow::init() {
 
 	if(!font)
 	{
-		server->log("\t** [Error] TTF_OpenFont: %s\n", TTF_GetError());
+		client->log("\t** [Error] TTF_OpenFont: %s\n", TTF_GetError());
 		exit(3);
 	}
 	/* end SDL_ttf */
 
 	/* start SDL_mixer */
+	/*
 	if(Mix_Init(~0)==-1)
 	{
 		server->log("\t ** [Error]Mix_Init: %s\n", Mix_GetError());
@@ -76,7 +77,7 @@ void TGameWindow::init() {
 
 	if(Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT,2,BUFFER) < 0)
 		exit(2);
-/*
+
 	auto *music = Mix_LoadMUS("aurora.mod");
 
 	Mix_PlayMusic(music, 0);*/
@@ -95,13 +96,6 @@ bool TGameWindow::doMain() {
 	return true;
 }
 
-void TGameWindow::ToggleFullscreen(SDL_Window* window) {
-	Uint32 FullscreenFlag = SDL_WINDOW_FULLSCREEN;
-	bool IsFullscreen = SDL_GetWindowFlags(window) & FullscreenFlag;
-	SDL_SetWindowFullscreen(window, IsFullscreen ? 0 : FullscreenFlag);
-	SDL_ShowCursor(IsFullscreen);
-}
-
 void TGameWindow::keyPressed(SDL_Keysym *keysym) {
 	switch (keysym->sym)
 	{
@@ -110,7 +104,7 @@ void TGameWindow::keyPressed(SDL_Keysym *keysym) {
 			break;
 
 		case SDLK_f:
-			TGameWindow::ToggleFullscreen(window );
+			renderToggleFullscreen();
 			break;
 
 		default:
@@ -149,13 +143,13 @@ void TGameWindow::DrawScreen() {
 	int mapWidth = 1, mapHeight = 1;
 	CString mapLevels;
 
-	if (server->localPlayer) {
-		if ( server->localPlayer->getLevel() != nullptr )
-			mapLevels = CString() << server->localPlayer->getLevel()->getLevelName() << "\n";
+	if (client->localPlayer) {
+		if ( client->localPlayer->getLevel() != nullptr )
+			mapLevels = CString() << client->localPlayer->getLevel()->getLevelName() << "\n";
 
-		TMap *map = server->localPlayer->getLevel()?server->localPlayer->getLevel()->getMap(): nullptr;
+		TMap *map = client->localPlayer->getLevel()?client->localPlayer->getLevel()->getMap(): nullptr;
 
-		Sint16 cameraX = server->localPlayer->getPixelX()-screenWidth/2, cameraY = server->localPlayer->getPixelY()-screenHeight/2;
+		Sint16 cameraX = client->localPlayer->getPixelX()-screenWidth/2, cameraY = client->localPlayer->getPixelY()-screenHeight/2;
 
 		if (map) {
 			mapWidth = map->getWidth();
@@ -177,7 +171,7 @@ void TGameWindow::DrawScreen() {
 
 		while ( mapLevels.bytesLeft() > 0 ) {
 			CString tmpLvlName = mapLevels.readString("\n");
-			level = server->getLevel(tmpLvlName.guntokenizeI());
+			level = client->getLevel(tmpLvlName.guntokenizeI());
 
 			int gmapX = (level->getMap() ? level->getMap()->getLevelX(level->getLevelName()) : 0);
 			int gmapY = (level->getMap() ? level->getMap()->getLevelY(level->getLevelName()) : 0);
@@ -207,7 +201,7 @@ void TGameWindow::DrawScreen() {
 				for (auto *chest : *level->getLevelChests()) {
 					auto chestDest = SDL_Rect({ static_cast<Sint16>((chest->getX() * tile.w) + ((levelWidth * tile.w) * gmapX) - cameraX), static_cast<Sint16>((chest->getY() * tile.h) + ((levelHeight * tile.h) * gmapY) - cameraY), 32, 32});
 
-					if (server->localPlayer->hasChest(chest,level->getLevelName()))
+					if (client->localPlayer->hasChest(chest,level->getLevelName()))
 						tileset->render(chestDest.x, chestDest.y, chestOpenTile.x, chestOpenTile.y, chestOpenTile.w, chestOpenTile.h);
 					else
 						tileset->render(chestDest.x, chestDest.y, chestTile.x, chestTile.y, chestTile.w, chestTile.h);
@@ -252,19 +246,22 @@ void TGameWindow::DrawScreen() {
 	startTimer = currentTimer;
 }
 
-void TGameWindow::drawText(const char *test) {
+void TGameWindow::drawText(const char *text) {
 	SDLEvents();
-	SDL_Surface *surf = TTF_RenderText_Blended(font, test, { 255, 255, 255});
+	auto * surf = renderText(font, text, { 255, 255, 255});
+	int w, h;
+
+	renderQueryTexture(surf, &w, &h);
 
 	if(surf)
 	{
-		auto dest = SDL_Rect{ /*0*/static_cast<Sint16>(screenWidth / 2 - (surf->w /2)), /*static_cast<Sint16>(prevY)*/static_cast<Sint16>(screenHeight / 2 - (surf->h /2)), static_cast<Uint16>(surf->w), static_cast<Uint16>(surf->h) };
+		auto dest = SDL_Rect{ /*0*/static_cast<Sint16>(screenWidth / 2 - (w /2)), /*static_cast<Sint16>(prevY)*/static_cast<Sint16>(screenHeight / 2 - (h /2)), static_cast<Uint16>(w), static_cast<Uint16>(h) };
 
 		renderClear();
-//		renderBlit(surf, nullptr, &dest);
-		SDL_FreeSurface(surf);
+		renderBlit(surf, nullptr, &dest);
+		renderDestroyTexture(surf);
 		renderPresent();
-		//prevY += surf->h-5;
+		//prevY += h-5;
 	}
 }
 
@@ -276,10 +273,8 @@ void TGameWindow::SDLEvents() {
 			shutdownProgram = true;
 		}
 
-		if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) {
-			screenWidth = event.window.data1;
-			screenHeight = event.window.data2;
-			SDL_RenderPresent( renderer );
+		if ((event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) || event.type == SDL_VIDEORESIZE) {
+			renderChangeSurfaceSize(&event);
 		}
 
 		if ( event.type == SDL_KEYDOWN ) {
@@ -293,8 +288,8 @@ void TGameWindow::SDLEvents() {
 
 	float speed = 0.30f;
 	int moveX = 0, moveY = 0, dir = 0;
-	if (server->localPlayer)
-		dir = server->localPlayer->getSprite() % 4;
+	if (client->localPlayer)
+		dir = client->localPlayer->getSprite() % 4;
 
 	auto ani = "idle";
 
@@ -326,22 +321,22 @@ void TGameWindow::SDLEvents() {
 		ani = "walk";
 	}
 
-	int x2 = server->localPlayer->getPixelX() + moveX;
-	int y2 = server->localPlayer->getPixelY() + moveY;
+	int x2 = client->localPlayer->getPixelX() + moveX;
+	int y2 = client->localPlayer->getPixelY() + moveY;
 
 	unsigned short fixedX = abs(x2) << 1, fixedY = abs(y2) << 1;
 	if (x2 < 0) fixedX |= 0x0001;
 	if (y2 < 0) fixedY |= 0x0001;
 
-	server->localPlayer->setProps(CString() >> char(PLPROP_X2) >> short(fixedX) >> char(PLPROP_Y2) >> short(fixedY), true, false, server->localPlayer);
-	server->localPlayer->setProps(CString() >> char(PLPROP_SPRITE) >> char(dir) >> char(PLPROP_GANI) >> char(strlen(ani)) << ani, true, false, server->localPlayer);
+	client->localPlayer->setProps(CString() >> char(PLPROP_X2) >> short(fixedX) >> char(PLPROP_Y2) >> short(fixedY), true, false, client->localPlayer);
+	client->localPlayer->setProps(CString() >> char(PLPROP_SPRITE) >> char(dir) >> char(PLPROP_GANI) >> char(strlen(ani)) << ani, true, false, client->localPlayer);
 }
 
 void TGameWindow::GaniDraw(CGaniObjectStub* ganiobj, int x, int y, float time) {
-	auto *ani = TAnimation::find(CString(CString() << ganiobj->getAnimation().text() << ".gani").text(), server);
+	auto *ani = TAnimation::find(CString(CString() << ganiobj->getAnimation().text() << ".gani").text(), client);
 
 	if (ani != nullptr)
-		ani->render(ganiobj, server, x, y, ganiobj->getSprite(), &ganiobj->getAniStep(), time);
+		ani->render(ganiobj, client, x, y, ganiobj->getSprite(), &ganiobj->getAniStep(), time);
 }
 
 TGameWindow::~TGameWindow() = default;

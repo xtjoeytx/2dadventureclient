@@ -15,6 +15,7 @@
 
 #if SDL_VERSION_ATLEAST(2,0,0)
 #define GameTexture SDL_Texture
+#define SDL_VIDEORESIZE SDL_LASTEVENT+1
 #else
 #define GameTexture SDL_Surface
 #endif
@@ -38,15 +39,13 @@ public:
 
 	bool doMain();
 
-	static void ToggleFullscreen(SDL_Window* window);
-
 	TImage *tileset{};
 
 	void keyPressed(SDL_Keysym *keysym);
 
 	static void keyReleased(SDL_Keysym *keysym);
 
-	void drawText(const char *test);
+	void drawText(const char *text);
 
 	void renderClear();
 
@@ -58,11 +57,17 @@ public:
 
 	GameTexture * renderLoadImage(const char *file);
 
+	GameTexture * renderText(TTF_Font *font, const char *text, SDL_Color fg);
+
 	static void renderSetAlpha(SDL_Texture * texture, Uint8 alpha);
 
-	void renderDestroyTexture(GameTexture * texture);
+	static void renderDestroyTexture(GameTexture * texture);
+
+	void renderToggleFullscreen();
+
+	void renderChangeSurfaceSize(SDL_Event * event);
 private:
-	TClient * server;
+	TClient * client;
 	std::chrono::high_resolution_clock::time_point startTimer;
 
 	void SDLEvents();

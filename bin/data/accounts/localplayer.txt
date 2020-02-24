@@ -1,6 +1,6 @@
 GRACC001
 NAME localplayer
-NICK default
+NICK ClientPlayer
 COMMUNITYNAME localplayer
 LEVEL onlinestartlocal.nw
 X 30.00
