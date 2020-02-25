@@ -2,7 +2,7 @@
 
 void TGameWindow::createRenderer() {
 	window = SDL_CreateWindow(GSERVER_APPNAME " v" GSERVER_VERSION, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth, screenHeight, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE );
+	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC );
 
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	renderClear();
@@ -19,7 +19,9 @@ void TGameWindow::renderToggleFullscreen() {
 void TGameWindow::renderChangeSurfaceSize() {
 	screenWidth = event.window.data1;
 	screenHeight = event.window.data2;
-	SDL_RenderPresent(renderer);
+
+	graphics->setTarget(renderer, screenWidth, screenHeight);
+
 	renderPresent();
 }
 

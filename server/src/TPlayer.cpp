@@ -1263,7 +1263,7 @@ bool TPlayer::processChat(CString pChat)
 		if (chatParse.size() == 2)
 		{
 			// Permission check.
-			if (!hasRight(PLPERM_WARPTOPLAYER) && !server->getSettings()->getBool("warptoforall", false))
+			if (!hasRight(PLPERM_WARPTOPLAYER) && !server->getSettings()->getBool("warptoforall", false) && !isLocalPlayer)
 			{
 				setChat("(not authorized to warp)");
 				return true;
@@ -1277,7 +1277,7 @@ bool TPlayer::processChat(CString pChat)
 		else if (chatParse.size() == 3)
 		{
 			// Permission check.
-			if (!hasRight(PLPERM_WARPTO) && !server->getSettings()->getBool("warptoforall", false))
+			if (!hasRight(PLPERM_WARPTO) && !server->getSettings()->getBool("warptoforall", false) && !isLocalPlayer)
 			{
 				setChat("(not authorized to warp)");
 				return true;
@@ -1289,7 +1289,7 @@ bool TPlayer::processChat(CString pChat)
 		else if (chatParse.size() == 4)
 		{
 			// Permission check.
-			if (!hasRight(PLPERM_WARPTO) && !server->getSettings()->getBool("warptoforall", false))
+			if (!hasRight(PLPERM_WARPTO) && !server->getSettings()->getBool("warptoforall", false) && !isLocalPlayer)
 			{
 				setChat("(not authorized to warp)");
 				return true;

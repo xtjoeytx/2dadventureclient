@@ -33,12 +33,124 @@ static const Uint32 amask = 0xff000000;
 
 Uint32 lastTick;
 
-TGameWindow::TGameWindow(TClient* server) : client(server), tileset(nullptr) {
+class ButtonActionListener : public gcn::ActionListener {
+public:
+	ButtonActionListener(TClient* client);
+	// Implement the action function in ActionListener to recieve actions
+	// The eventId tells us which widget called the action function.
+	void action(const gcn::ActionEvent& actionEvent) {
+
+		if (actionEvent.getId() == "ok_clicked") {
+			if (client->localPlayer)
+				client->localPlayer->warp("zold_outside_1_1.nw", client->localPlayer->getX(), client->localPlayer->getY(), -1);
+		} else if (actionEvent.getId() == "button2") {
+		} else if (actionEvent.getId() == "inputbox_enter") {
+			if (client->localPlayer) {
+				auto * field = (gcn::TextField*)actionEvent.getSource();
+				const char* text = field->getText().c_str();
+				client->localPlayer->setProps(CString() >> char(PLPROP_CURCHAT) >> char(strlen(text)) << text, true, false, client->localPlayer);
+				field->setText("");
+			}
+		}
+	}
+private:
+	TClient* client;
+};
+
+ButtonActionListener::ButtonActionListener(TClient *client) : client(client) {
+
+};
+
+ButtonActionListener* buttonActionListener;
+
+TGameWindow::TGameWindow(TClient* client) : client(client), tileset(nullptr) {
 	screenWidth = SCREEN_WIDTH;
 	screenHeight = SCREEN_HEIGHT;
 	createRenderer();
 
 	startTimer = std::chrono::high_resolution_clock::now();
+
+	/*
+	 * Now it's time for Guichan SDL stuff
+	 */
+	imageLoader = new gcn::SDLImageLoader();
+
+	// The ImageLoader in use is static and must be set to be
+	// able to load images
+	gcn::Image::setImageLoader(imageLoader);
+	graphics = new gcn::SDL2Graphics();
+
+	// Set the target for the graphics object to be the screen.
+	// In other words, we will draw to the screen.
+	// Note, any surface will do, it doesn't have to be the screen.
+	graphics->setTarget(renderer, screenWidth, screenHeight);
+	input = new gcn::SDLInput();
+
+	/*
+	 * Last but not least it's time to initialize and create the gui
+	 * with Guichan stuff.
+	 */
+	top = new gcn::Container();
+	// Set the dimension of the top container to match the screen.
+	//top->setDimension(gcn::Rectangle(0, 0, screenWidth*2, screenHeight*2));
+	top->setOpaque(false);
+	top->setBaseColor(gcn::Color(255, 255, 255, 190));
+	top->setSize(screenWidth, screenHeight);
+
+	gui = new gcn::Gui();
+	// Set gui to use the SDLGraphics object.
+	gui->setGraphics(graphics);
+	// Set gui to use the SDLInput object
+	gui->setInput(input);
+	// Set the top container
+	gui->setTop(top);
+
+	// Load the image font.
+	font2 = new gcn::ImageFont("fixedfont.bmp", " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+	// The global font is static and must be set.
+	gcn::Widget::setGlobalFont(font2);
+	//gcn::Widget::setBackgroundColor( gcn::Color( 255, 0, 0, 255 ) );
+
+	// Create a label with test hello world
+	label = new gcn::Label("GUI test label");
+
+	// Set the labels position
+	label->setPosition(60, 10);
+	button = new gcn::Button("OK");
+	button->setPosition( 10, 10 );
+	button->setActionEventId("ok_clicked");
+	// Make an instance of the ButtonActionListener
+	buttonActionListener = new ButtonActionListener(client);
+
+	// Add the ButtonActionListener to the buttons action listeners
+	button->addActionListener(buttonActionListener);
+
+	window2 = new gcn::Window("InGame Window");
+	window2->setBaseColor(gcn::Color(192, 192, 192, 50));
+	window2->setOpaque(true);
+	window2->setMovable(true);
+	window2->setTitleBarHeight(20);
+	window2->setEnabled(true);
+	window2->resizeToContent();
+	window2->setBorderSize(3);
+
+	window2->setSize(200,100);
+
+	// Add the label to the top container
+	window2->add(button);
+	window2->add(label);
+
+	top->add(window2, 100, 350);
+
+	inputBox = new gcn::TextField();
+	inputBox->setSize(screenWidth, 22);
+	inputBox->setTabInEnabled(true);
+	inputBox->setTabOutEnabled(true);
+	inputBox->setBackgroundColor(gcn::Color(255,255,255,255));
+	inputBox->setActionEventId("inputbox_enter");
+	inputBox->addActionListener(buttonActionListener);
+
+	top->add(inputBox, 0, screenHeight-22);
 }
 
 void TGameWindow::init() {
@@ -108,6 +220,8 @@ void TGameWindow::keyPressed(SDL_Keysym *keysym) {
 		case SDLK_f:
 			renderToggleFullscreen();
 			break;
+		case SDLK_q:
+			break;
 
 		default:
 			keys[keysym->sym] = true;
@@ -131,6 +245,9 @@ void TGameWindow::drawScreen() {
 	auto currentTimer = std::chrono::high_resolution_clock::now();
 	typedef std::chrono::duration<float> timeDiff;
 	timeDiff time_diff = currentTimer - startTimer;
+
+	// Let the gui perform it's logic (like handle input)
+	gui->logic();
 
 	renderClear();
 
@@ -240,19 +357,23 @@ void TGameWindow::drawScreen() {
 
 	//Increment the frame counter
 	frame++;
-	if (lastTick < curTick - 1000)
-	{
+
+	if (lastTick < curTick - 1000) {
 		lastTick = curTick;
 		fps_current = frame;
 		frame = 0;
 	}
+
 	char fps_text[50];
 	sprintf(fps_text, "FPS: %d", fps_current);
 
 	drawText(fps_text);
 
+	// Draw the gui
+	gui->draw();
+
 	renderPresent();
-	
+
 	if ( fps.get_ticks() < 1000 / FRAMES_PER_SECOND ) {
 		SDL_Delay((1000 / FRAMES_PER_SECOND) - fps.get_ticks());
 	}
@@ -267,25 +388,26 @@ void TGameWindow::drawText(const char *text) {
 
 	renderQueryTexture(surf, &w, &h);
 
-	if(surf)
-	{
+	if(surf) {
 		auto dest = SDL_Rect{ 10/*static_cast<Sint16>(screenWidth / 2 - (w /2))*/, 10/*static_cast<Sint16>(prevY)static_cast<Sint16>(screenHeight / 2 - (h /2))*/, static_cast<Uint16>(w), static_cast<Uint16>(h) };
 
 		renderBlit(surf, nullptr, &dest);
 		renderDestroyTexture(surf);
-		renderPresent();
 		//prevY += h-5;
 	}
 }
 
 void TGameWindow::sdlEvents() {
-	if ( SDL_PollEvent(&event)) {
+	while ( SDL_PollEvent(&event) ) {
 		if ( event.type == SDL_QUIT ) {
 			shutdownProgram = true;
 		}
 
 		if (RENDER_RESIZE_EVENT) {
 			renderChangeSurfaceSize();
+			top->setSize(screenWidth, screenHeight);
+			inputBox->setPosition(0, screenHeight-22);
+			inputBox->setWidth(screenWidth);
 		}
 
 		if ( event.type == SDL_KEYDOWN ) {
@@ -295,6 +417,8 @@ void TGameWindow::sdlEvents() {
 		if ( event.type == SDL_KEYUP ) {
 			keyReleased(&event.key.keysym);
 		}
+
+		input->pushInput(event);
 	}
 
 	float speed = 0.15f;

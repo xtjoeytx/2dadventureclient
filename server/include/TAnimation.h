@@ -35,7 +35,7 @@ class TAnimationAni
 class TAnimation
 {
 	public:
-		explicit TAnimation(CString pName, TClient * theServer);
+		explicit TAnimation(const CString& pName, TClient * theServer);
 		~TAnimation();
 
 		bool loaded;

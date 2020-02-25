@@ -10,13 +10,13 @@
 class TImage
 {
 	public:
-		explicit TImage(CString pName, TClient * theServer);
+		explicit TImage(const CString& pName, TClient * theServer);
 		~TImage();
 
 		CString name, real;
 
 		bool countChange(int pCount);
-		bool loadTexture(CString pImage);
+		bool loadTexture(const CString& pImage);
 		inline void render(int pX, int pY);
 		inline void render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pHeight, int alpha);
 		inline void render(int pX, int pY, float r, float g, float b, float a);

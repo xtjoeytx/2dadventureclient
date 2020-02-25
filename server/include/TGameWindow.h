@@ -9,6 +9,9 @@
 #include <SDL_ttf.h>
 #include <SDL_mixer.h>
 
+#include <guisan.hpp>
+#include <guisan/sdl.hpp>
+
 #include "IConfig.h"
 
 #include "TClient.h"
@@ -30,7 +33,7 @@ class TImage;
 class TGameWindow
 {
 public:
-	explicit TGameWindow(TClient* server);
+	explicit TGameWindow(TClient* client);
 
 	~TGameWindow();
 
@@ -51,6 +54,8 @@ public:
 	void renderBlit(GameTexture * texture, SDL_Rect * srcrect, SDL_Rect * dstrect);
 
 	void renderClear();
+
+	void renderPresent();
 
 private:
 
@@ -80,16 +85,17 @@ private:
 
 	void drawScreen();
 
+	/* Renderer stuff */
 #if SDL_VERSION_ATLEAST(2,0,0)
 	SDL_Window *window{};
+
 	SDL_Renderer *renderer{};
 #else
 	SDL_Surface *screen{};
 #endif
 
-	void createRenderer();
 
-	void renderPresent();
+	void createRenderer();
 
 	GameTexture * renderText(TTF_Font *font, const char *text, SDL_Color fg);
 
@@ -98,6 +104,20 @@ private:
 	void renderChangeSurfaceSize();
 
 	int fps_current;
+
+	/* Guichan SDL stuff we need */
+	gcn::SDLInput* input;             // Input driver
+	gcn::SDL2Graphics* graphics;       // Graphics driver
+	gcn::SDLImageLoader* imageLoader; // For loading images
+
+	/* Guichan stuff we need */
+	gcn::Gui* gui;            // A Gui object - binds it all together
+	gcn::Container* top;      // A top container
+	gcn::ImageFont* font2;     // A font
+	gcn::Label* label;        // And a label for the Hello World text
+	gcn::Button* button;
+	gcn::Window* window2;
+	gcn::TextField* inputBox;
 };
 
 #endif //GS2EMU_TGAMEWINDOW_H

@@ -8,7 +8,7 @@
 #include "TAnimation.h"
 
 /* Animations */
-TAnimation::TAnimation(CString pName, TClient * theServer)
+TAnimation::TAnimation(const CString& pName, TClient * theServer)
 {
 	server = theServer;
 	name = pName;

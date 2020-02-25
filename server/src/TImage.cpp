@@ -4,7 +4,7 @@
 #include "TImage.h"
 #include "TClient.h"
 
-TImage::TImage(CString pName, TClient *theServer) {
+TImage::TImage(const CString& pName, TClient *theServer) {
 	server = theServer;
 	name = pName;
 	real = pName.text() + pName.findl(CFileSystem::getPathSeparator()) + 1;
@@ -21,7 +21,7 @@ TImage::TImage(CString pName, TClient *theServer) {
 
 TImage::~TImage()
 {
-	server->gameWindow->renderDestroyTexture(texture);
+	TGameWindow::renderDestroyTexture(texture);
 
 	auto imageIter = imageList.find(name.text());
 	if (imageIter != imageList.end()) {
@@ -31,7 +31,7 @@ TImage::~TImage()
 	}
 }
 
-bool TImage::loadTexture(CString pImage) {
+bool TImage::loadTexture(const CString& pImage) {
 	//Load image at specified path
 	GameTexture* loadedSurface = server->gameWindow->renderLoadImage(pImage.text());
 

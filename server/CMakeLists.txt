@@ -181,18 +181,21 @@ endif()
 include_directories(${SDL2_INCLUDE_DIR} ${SDL2_image_INCLUDE_DIR} ${SDL2_ttf_INCLUDE_DIR} ${SDL2_mixer_INCLUDE_DIR})
 include_directories(${ZLIB_INCLUDE_DIR})
 
-
-
 if(NOT NOUPNP AND NOT MINIUPNPC_FOUND)
 	include_directories(${PROJECT_SOURCE_DIR}/dependencies/miniupnp ${PROJECT_SOURCE_DIR}/dependencies/miniupnp/miniupnpc)
 endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/dependencies/gs2lib/include)
+file(GLOB GUISAN_SRC
+		"${PROJECT_SOURCE_DIR}/dependencies/guisan/src/*.cpp"
+		"${PROJECT_SOURCE_DIR}/dependencies/guisan/src/sdl/*.cpp"
+		"${PROJECT_SOURCE_DIR}/dependencies/guisan/src/widgets/*.cpp"
+		#"${PROJECT_SOURCE_DIR}/dependencies/guisan/src/opengl/*.cpp"
+		)
+include_directories(${PROJECT_SOURCE_DIR}/dependencies/guisan/include)
 
 if(APPLE)
-
-	add_executable(${TARGET_NAME} ${SOURCES} ${HEADERS})
-
+	add_executable(${TARGET_NAME} ${SOURCES} ${GUISAN_SRC} ${HEADERS})
 
 	# Enable ARC (automatic reference counting) for OS X build
 	set_property(
@@ -228,6 +231,10 @@ endif()
 
 add_dependencies(${TARGET_NAME} gs2lib)
 target_link_libraries(${TARGET_NAME} gs2lib)
+#add_dependencies(${TARGET_NAME} KiWi)
+#target_link_libraries(${TARGET_NAME} KiWi)
+#include_directories(${PROJECT_SOURCE_DIR}/dependencies/kiwi/src)
+
 add_compile_definitions(__AMIGA__)
 
 if(NOT NOUPNP)

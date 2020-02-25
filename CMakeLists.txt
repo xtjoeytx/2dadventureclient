@@ -251,7 +251,6 @@ if(NOT NOUPNP)
 endif()
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/dependencies/opengs1)
-add_subdirectory(${PROJECT_SOURCE_DIR}/dependencies/milkytracker/src/ppui)
 
 find_package(Threads REQUIRED)
 if (AMIGA)

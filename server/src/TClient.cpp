@@ -128,8 +128,8 @@ int TClient::init(
 		if (file.first.find(".gif") > 0 || file.first.find(".png") > 0 || file.first.find(".jpg") > 0) {
 			clientLog.out("\t%s\n", file.first.text());
 			gameWindow->renderClear();
-
 			gameWindow->drawText(file.first.text());
+			gameWindow->renderPresent();
 
 			TImage::find(file.first.text(), this, true);
 		}
