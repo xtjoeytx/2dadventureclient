@@ -29,11 +29,17 @@ public:
 
 	virtual const CString &getNickname() const = 0;
 
+	virtual const CString &getChatMsg() const = 0;
+
+	virtual const CString &getImage() const = 0;
+
 	virtual TLevel * getLevel() const = 0;
 
 	virtual int &getAniStep() = 0;
 
 	virtual int getSprite() = 0;
+
 	virtual const CString &getAnimation() const = 0;
 };
+
 #endif //GS2EMU_CGANIOBJECTSTUB_H

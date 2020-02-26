@@ -33,12 +33,37 @@ static const Uint32 amask = 0xff000000;
 
 Uint32 lastTick;
 
-class ButtonActionListener : public gcn::ActionListener {
+class FocusActionListener : public gcn::FocusListener {
 public:
-	ButtonActionListener(TClient* client);
+	explicit FocusActionListener(TClient* client);
 	// Implement the action function in ActionListener to recieve actions
 	// The eventId tells us which widget called the action function.
-	void action(const gcn::ActionEvent& actionEvent) {
+	void focusGained(const gcn::Event& actionEvent) override {
+
+		if (actionEvent.getSource()->getId() == "ok_clicked") {
+			printf("hi");
+		}
+	}
+
+	void focusLost(const gcn::Event& actionEvent) override {
+
+	}
+private:
+	TClient* client;
+};
+
+FocusActionListener::FocusActionListener(TClient *client) : client(client) {
+
+};
+
+FocusActionListener* focusActionListener;
+
+class ButtonActionListener : public gcn::ActionListener {
+public:
+	explicit ButtonActionListener(TClient* client);
+	// Implement the action function in ActionListener to recieve actions
+	// The eventId tells us which widget called the action function.
+	void action(const gcn::ActionEvent& actionEvent) override {
 
 		if (actionEvent.getId() == "ok_clicked") {
 			if (client->localPlayer)
@@ -78,12 +103,17 @@ TGameWindow::TGameWindow(TClient* client) : client(client), tileset(nullptr) {
 	// The ImageLoader in use is static and must be set to be
 	// able to load images
 	gcn::Image::setImageLoader(imageLoader);
-	graphics = new gcn::SDL2Graphics();
 
 	// Set the target for the graphics object to be the screen.
 	// In other words, we will draw to the screen.
 	// Note, any surface will do, it doesn't have to be the screen.
+#if SDL_VERSION_ATLEAST(2,0,0)
+	graphics = new gcn::SDL2Graphics();
 	graphics->setTarget(renderer, screenWidth, screenHeight);
+#else
+	graphics = new gcn::SDLGraphics();
+	graphics->setTarget(screen);
+#endif
 	input = new gcn::SDLInput();
 
 	/*
@@ -106,7 +136,7 @@ TGameWindow::TGameWindow(TClient* client) : client(client), tileset(nullptr) {
 	gui->setTop(top);
 
 	// Load the image font.
-	font2 = new gcn::ImageFont("fixedfont.bmp", " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+	font2 = new gcn::ImageFont("fixedfont.bmp", " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.");
 	// The global font is static and must be set.
 	gcn::Widget::setGlobalFont(font2);
 	//gcn::Widget::setBackgroundColor( gcn::Color( 255, 0, 0, 255 ) );
@@ -121,18 +151,20 @@ TGameWindow::TGameWindow(TClient* client) : client(client), tileset(nullptr) {
 	button->setActionEventId("ok_clicked");
 	// Make an instance of the ButtonActionListener
 	buttonActionListener = new ButtonActionListener(client);
+	focusActionListener = new FocusActionListener(client);
+
 
 	// Add the ButtonActionListener to the buttons action listeners
 	button->addActionListener(buttonActionListener);
 
 	window2 = new gcn::Window("InGame Window");
-	window2->setBaseColor(gcn::Color(192, 192, 192, 50));
+	window2->setBaseColor(gcn::Color(192, 192, 192, 255));
 	window2->setOpaque(true);
 	window2->setMovable(true);
 	window2->setTitleBarHeight(20);
 	window2->setEnabled(true);
 	window2->resizeToContent();
-	window2->setBorderSize(3);
+	//window2->setBorderSize(3);
 
 	window2->setSize(200,100);
 
@@ -142,14 +174,19 @@ TGameWindow::TGameWindow(TClient* client) : client(client), tileset(nullptr) {
 
 	top->add(window2, 100, 350);
 
-	inputBox = new gcn::TextField();
-	inputBox->setSize(screenWidth, 22);
+	inputBox = new gcn::TextField("");
+	inputBox->setWidth(screenWidth);
+	inputBox->setHeight(22);
+	//inputBox->setSize(screenWidth, 22);
+	//inputBox->setDimension(gcn::Rectangle(0,0,screenWidth,22));
+	inputBox->setEnabled(true);
+
 	inputBox->setTabInEnabled(true);
 	inputBox->setTabOutEnabled(true);
 	inputBox->setBackgroundColor(gcn::Color(255,255,255,255));
 	inputBox->setActionEventId("inputbox_enter");
 	inputBox->addActionListener(buttonActionListener);
-
+	inputBox->addFocusListener(focusActionListener);
 	top->add(inputBox, 0, screenHeight-22);
 }
 
@@ -172,6 +209,11 @@ void TGameWindow::init() {
 	atexit(TTF_Quit); /* remember to quit SDL_ttf */
 
 	font=TTF_OpenFont("8-bit-pusab.ttf", 15);
+	fontSmaller=TTF_OpenFont("TEMPSITC.TTF", 20);
+	TTF_SetFontStyle(fontSmaller, TTF_STYLE_BOLD);
+	//TTF_SetFontOutline(fontSmaller, 1);
+	//TTF_SetFontHinting(fontSmaller, TTF_HINTING_NORMAL);
+
 
 	if(!font)
 	{
@@ -199,7 +241,7 @@ void TGameWindow::init() {
 
 	const char* test = "Loading...";
 
-	drawText(test);
+	drawText(font,test, 10, 10, {255,255,255});
 }
 
 bool TGameWindow::doMain() {
@@ -221,6 +263,7 @@ void TGameWindow::keyPressed(SDL_Keysym *keysym) {
 			renderToggleFullscreen();
 			break;
 		case SDLK_q:
+			window2->setVisible(!window2->isVisible());
 			break;
 
 		default:
@@ -288,7 +331,7 @@ void TGameWindow::drawScreen() {
 		if (map)
 			mapLevels = map->getLevels();
 
-		std::vector<CAnimationObjectStub *> ganiObjects;
+		std::vector<CAnimationObjectStub *> animationObjects;
 
 		while ( mapLevels.bytesLeft() > 0 ) {
 			CString tmpLvlName = mapLevels.readString("\n");
@@ -312,12 +355,19 @@ void TGameWindow::drawScreen() {
 					}
 				}
 
-				/*
-				 * We don't need to render signs...
-				 * for (auto *sign : *level->getLevelSigns()) {
-				 *	auto signDest = SDL_Rect({static_cast<Sint16>((sign->getX()*tile.w) + ((levelWidth * tile.w) * gmapX) - cameraX),static_cast<Sint16>((sign->getY() * tile.h) + ((levelHeight * tile.h) * gmapY) - cameraY),32,16});
-				 * }
-				*/
+				for (auto *sign : *level->getLevelSigns()) {
+					auto signDest = SDL_Rect({static_cast<Sint16>((sign->getX()*tile.w) + ((levelWidth * tile.w) * gmapX) - cameraX),static_cast<Sint16>((sign->getY() * tile.h) + ((levelHeight * tile.h) * gmapY) - cameraY),32,16});
+					SDL_SetRenderDrawColor(renderer, 255,0,0,255);
+
+					SDL_RenderDrawRect(renderer, &signDest);
+				}
+
+				for (auto *link : *level->getLevelLinks()) {
+					auto linkDest = SDL_Rect({static_cast<Sint16>((link->getX()*tile.w) + ((levelWidth * tile.w) * gmapX) - cameraX),static_cast<Sint16>((link->getY() * tile.h) + ((levelHeight * tile.h) * gmapY) - cameraY),link->getWidth(),link->getHeight()});
+					SDL_SetRenderDrawColor(renderer, 0,255,255,255);
+
+					SDL_RenderDrawRect(renderer, &linkDest);
+				}
 
 				for (auto *chest : *level->getLevelChests()) {
 					auto chestDest = SDL_Rect({ static_cast<Sint16>((chest->getX() * tile.w) + ((levelWidth * tile.w) * gmapX) - cameraX), static_cast<Sint16>((chest->getY() * tile.h) + ((levelHeight * tile.h) * gmapY) - cameraY), 32, 32});
@@ -330,29 +380,34 @@ void TGameWindow::drawScreen() {
 
 				for (auto *levelPlayer : *level->getPlayerList()) {
 					if (levelPlayer != nullptr)
-						ganiObjects.push_back(levelPlayer);
+						animationObjects.push_back(levelPlayer);
 
 				}
 
 				for (auto *levelNpc : *level->getLevelNPCs()) {
 					if (levelNpc != nullptr) {
-						if (levelNpc->getImage().match("-")) {
-							ganiObjects.push_back(levelNpc);
-						} else {
-						//	TImage* tmpImg = TImage::find(levelNpc->getImage().text(), this);
-						//	if (tmpImg)
-						//		tmpImg->render(levelNpc->getPixelX(),levelNpc->getPixelY());
-						}
+						animationObjects.push_back(levelNpc);
 					}
 				}
 			}
 		}
 
-		for (auto ganiObj : ganiObjects) {
-			drawAnimation(ganiObj, ((levelWidth * tile.w) * (ganiObj->getLevel()->getMap() ? ganiObj->getLevel()->getMap()->getLevelX(ganiObj->getLevel()->getLevelName()) : 0)) + ganiObj->getPixelX() - cameraX, ((levelHeight * tile.h) * (ganiObj->getLevel()->getMap() ? ganiObj->getLevel()->getMap()->getLevelY(ganiObj->getLevel()->getLevelName()) : 0)) + ganiObj->getPixelY() - cameraY, time_diff.count());
+		std::sort(animationObjects.begin(), animationObjects.end(), [ ]( CAnimationObjectStub* lhs, CAnimationObjectStub* rhs )
+		{
+			return lhs->getPixelY() < rhs->getPixelY();
+		});
+
+		for (auto animationObject : animationObjects) {
+			if (animationObject->getImage() != "") {
+				TImage* tmpImg = TImage::find(animationObject->getImage().text(), client);
+				if (tmpImg)
+					tmpImg->render(((levelWidth * tile.w) * (animationObject->getLevel()->getMap() ? animationObject->getLevel()->getMap()->getLevelX(animationObject->getLevel()->getLevelName()) : 0)) + animationObject->getPixelX() - cameraX, ((levelHeight * tile.h) * (animationObject->getLevel()->getMap() ? animationObject->getLevel()->getMap()->getLevelY(animationObject->getLevel()->getLevelName()) : 0)) + animationObject->getPixelY()- cameraY);//, 0, 0, levelNpc->getWidth(), levelNpc->getHeight());
+			} else if (animationObject->getAnimation() != "") {
+				drawAnimation(animationObject, ((levelWidth * tile.w) * (animationObject->getLevel()->getMap() ? animationObject->getLevel()->getMap()->getLevelX(animationObject->getLevel()->getLevelName()) : 0)) + animationObject->getPixelX() - cameraX, ((levelHeight * tile.h) * (animationObject->getLevel()->getMap() ? animationObject->getLevel()->getMap()->getLevelY(animationObject->getLevel()->getLevelName()) : 0)) + animationObject->getPixelY() - cameraY, time_diff.count());
+			}
 		}
 
-		ganiObjects.clear();
+		animationObjects.clear();
 	}
 
 	//Increment the frame counter
@@ -367,7 +422,7 @@ void TGameWindow::drawScreen() {
 	char fps_text[50];
 	sprintf(fps_text, "FPS: %d", fps_current);
 
-	drawText(fps_text);
+	drawText(font, fps_text, 10, 10, { static_cast<Uint8>(fps_current), static_cast<Uint8>(fps_current), static_cast<Uint8>(fps_current) });
 
 	// Draw the gui
 	gui->draw();
@@ -381,15 +436,26 @@ void TGameWindow::drawScreen() {
 	startTimer = currentTimer;
 }
 
-void TGameWindow::drawText(const char *text) {
-	sdlEvents();
-	auto * surf = renderText(font, text, { 255, 255, 255});
+void TGameWindow::drawText(TTF_Font * textFont, const char * text, int x, int y, SDL_Color color, TextPosition p) {
+	//sdlEvents();
+	auto * surf = renderText(textFont, text, color);
 	int w, h;
 
 	renderQueryTexture(surf, &w, &h);
 
 	if(surf) {
-		auto dest = SDL_Rect{ 10/*static_cast<Sint16>(screenWidth / 2 - (w /2))*/, 10/*static_cast<Sint16>(prevY)static_cast<Sint16>(screenHeight / 2 - (h /2))*/, static_cast<Uint16>(w), static_cast<Uint16>(h) };
+		switch (p){
+			case RIGHT:
+				x = x - w;
+				break;
+			case CENTERED:
+				x = x - (int)(w/2);
+				break;
+			case LEFT:
+			default:
+				break;
+		}
+		auto dest = SDL_Rect{ x, y, static_cast<Uint16>(w), static_cast<Uint16>(h) };
 
 		renderBlit(surf, nullptr, &dest);
 		renderDestroyTexture(surf);
@@ -421,7 +487,7 @@ void TGameWindow::sdlEvents() {
 		input->pushInput(event);
 	}
 
-	float speed = 0.15f;
+	float speed = 0.30f;
 	int moveX = 0, moveY = 0, dir = 0;
 	if (client->localPlayer)
 		dir = client->localPlayer->getSprite() % 4;
@@ -471,7 +537,7 @@ void TGameWindow::drawAnimation(CAnimationObjectStub* animationObject, int x, in
 	auto *ani = TAnimation::find(CString(CString() << animationObject->getAnimation().text() << ".gani").text(), client);
 
 	if (ani != nullptr)
-		ani->render(animationObject, client, x, y, animationObject->getSprite(), &animationObject->getAniStep(), time);
+		ani->render(animationObject, x, y, animationObject->getSprite(), &animationObject->getAniStep(), time);
 }
 
 TGameWindow::~TGameWindow() {

@@ -186,13 +186,18 @@ if(NOT NOUPNP AND NOT MINIUPNPC_FOUND)
 endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/dependencies/gs2lib/include)
+if (SDL2)
+	set(GUISAN guisan)
+else()
+	set(GUISAN guichan)
+endif()
 file(GLOB GUISAN_SRC
-		"${PROJECT_SOURCE_DIR}/dependencies/guisan/src/*.cpp"
-		"${PROJECT_SOURCE_DIR}/dependencies/guisan/src/sdl/*.cpp"
-		"${PROJECT_SOURCE_DIR}/dependencies/guisan/src/widgets/*.cpp"
+		"${PROJECT_SOURCE_DIR}/dependencies/${GUISAN}/src/*.cpp"
+		"${PROJECT_SOURCE_DIR}/dependencies/${GUISAN}/src/sdl/*.cpp"
+		"${PROJECT_SOURCE_DIR}/dependencies/${GUISAN}/src/widgets/*.cpp"
 		#"${PROJECT_SOURCE_DIR}/dependencies/guisan/src/opengl/*.cpp"
 		)
-include_directories(${PROJECT_SOURCE_DIR}/dependencies/guisan/include)
+include_directories(${PROJECT_SOURCE_DIR}/dependencies/${GUISAN}/include)
 
 if(APPLE)
 	add_executable(${TARGET_NAME} ${SOURCES} ${GUISAN_SRC} ${HEADERS})
@@ -203,7 +208,7 @@ if(APPLE)
 	)
 	set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS_RELWITHDEBINFO "-framework SDL2")
 elseif(WIN32)
-	add_executable(${TARGET_NAME} ${SOURCES} ${HEADERS})
+	add_executable(${TARGET_NAME} ${SOURCES} ${GUISAN_SRC} ${HEADERS})
 	if(MSVC)
 		set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:CONSOLE")
 		set_target_properties(${TARGET_NAME} PROPERTIES COMPILE_DEFINITIONS_DEBUG "_CONSOLE")
@@ -218,9 +223,9 @@ elseif(WIN32)
 		endif()
 	endif()
 elseif(EMSCRIPTEN)
-	add_executable(${TARGET_NAME} ${SOURCES} ${HEADERS})
+	add_executable(${TARGET_NAME} ${SOURCES} ${GUISAN_SRC} ${HEADERS})
 else()
-	add_executable(${TARGET_NAME} ${SOURCES} ${HEADERS})
+	add_executable(${TARGET_NAME} ${SOURCES} ${GUISAN_SRC} ${HEADERS})
 endif()
 
 target_link_libraries(${TARGET_NAME} ${CMAKE_THREAD_LIBS_INIT})

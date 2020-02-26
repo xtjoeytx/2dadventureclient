@@ -80,6 +80,10 @@ class TLevel
 		//! \return The level signs.
 		std::vector<TLevelSign *>* getLevelSigns()		{ return &levelSigns; }
 
+		//! Gets a vector full of the level links.
+		//! \return The level links.
+		std::vector<TLevelLink *>* getLevelLinks()		{ return &levelLinks; }
+
 		//! Gets a vector full of the players on the level.
 		//! \return The players on the level.
 		std::vector<TPlayer *>* getPlayerList()			{ return &levelPlayerList; }

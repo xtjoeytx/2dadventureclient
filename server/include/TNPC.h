@@ -200,6 +200,7 @@ class TNPC : public CAnimationObjectStub
 		const CString& getSwordImage() const	{ return swordImage; }
 		const CString& getImage() const			{ return image; }
 		const CString& getNickname() const 		{ return nickName; }
+		const CString& getChatMsg() const 		{ return chatMsg; }
 		const std::string& getName() const		{ return npcName; }
 		const CString& getType() const			{ return npcType; }
 		const CString& getClientScript() const	{ return clientScript; }

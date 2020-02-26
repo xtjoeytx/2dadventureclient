@@ -550,7 +550,7 @@ bool TPlayer::doTimedEvents()
 
 	// Disconnect if players are inactive.
 	CSettings* settings = server->getSettings();
-	if (settings->getBool("disconnectifnotmoved"))
+	if (settings->getBool("disconnectifnotmoved") && !isLocalPlayer)
 	{
 		int maxnomovement = settings->getInt("maxnomovement", 1200);
 		if (((int)difftime(currTime, lastMovement) > maxnomovement) && ((int)difftime(currTime, lastChat) > maxnomovement))
@@ -562,7 +562,7 @@ bool TPlayer::doTimedEvents()
 	}
 
 	// Disconnect if no data has been received in 5 minutes.
-	if ((int)difftime(currTime, lastData) > 300)
+	if ((int)difftime(currTime, lastData) > 300 && !isLocalPlayer)
 	{
 		serverlog.out("[%s] Client %s has timed out.\n", server->getName().text(), accountName.text());
 		return false;
@@ -1480,10 +1480,9 @@ bool TPlayer::warp(const CString& pLevelName, float pX, float pY, time_t modTime
 	TLevel* newLevel = TLevel::findLevel(pLevelName, server);
 
 	// If we are warping to the same level, just update the player's location.
-	if (currentLevel != 0 && newLevel == currentLevel)
+	if (currentLevel != nullptr && newLevel == currentLevel)
 	{
-		CString packet = CString() >> (char)PLPROP_X >> (char)(pX * 2) >> (char)PLPROP_Y >> (char)(pY * 2);
-		setProps(packet, true, true);
+		setProps(CString() >> (char)PLPROP_X >> (char)(pX * 2) >> (char)PLPROP_Y >> (char)(pY * 2), true, true);
 		return true;
 	}
 
@@ -1509,7 +1508,7 @@ bool TPlayer::warp(const CString& pLevelName, float pX, float pY, time_t modTime
 	{
 		// Failed, so try warping back to our old level.
 		bool warped = true;
-		if (currentLevel == 0) warped = false;
+		if (currentLevel == nullptr) warped = false;
 		else
 		{
 			x = oldX;
@@ -1530,6 +1529,8 @@ bool TPlayer::warp(const CString& pLevelName, float pX, float pY, time_t modTime
 				return false;
 		}
 	}
+
+	setProps(CString() >> (char)PLPROP_X >> (char)(pX * 2) >> (char)PLPROP_Y >> (char)(pY * 2), true, true);
 
 	return warpSuccess;
 }
@@ -2079,7 +2080,7 @@ bool TPlayer::addWeapon(const CString& name)
 
 bool TPlayer::addWeapon(TWeapon* weapon)
 {
-	if (weapon == 0) return false;
+	if (weapon == nullptr) return false;
 
 	// See if the player already has the weapon.
 	if (vecSearch<CString>(weaponList, weapon->getName()) == -1)
@@ -2685,7 +2686,7 @@ bool TPlayer::msgPLI_BADDYHURT(CString& pPacket)
 bool TPlayer::msgPLI_BADDYADD(CString& pPacket)
 {
 	// Don't add a baddy if we aren't in a level!
-	if (level == 0)
+	if (level == nullptr)
 		return true;
 
 	float loc[2] = {(float)pPacket.readGUChar() / 2.0f, (float)pPacket.readGUChar() / 2.0f};

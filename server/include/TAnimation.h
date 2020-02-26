@@ -10,12 +10,13 @@ class TPlayer;
 class TAnimationSprite
 {
 	public:
-		TAnimationSprite(int pSprite, std::string pImage, int pX, int pY, int pW, int pH, std::string desc);
+		TAnimationSprite(TClient * client, int pSprite, std::string pImage, int pX, int pY, int pW, int pH, std::string desc);
 		~TAnimationSprite();
 
-		inline void render(CAnimationObjectStub * player, TClient * server, int pX, int pY);
+		inline void render(CAnimationObjectStub * player, int pX, int pY);
 
 	private:
+		TClient * client;
 		std::string img, description;
 		int sprite, x, y, w, h;
 };
@@ -23,36 +24,39 @@ class TAnimationSprite
 class TAnimationAni
 {
 	public:
-		TAnimationAni(TAnimationSprite *pImg, int pX, int pY);
+		TAnimationAni(TClient * client, TAnimationSprite *pImg, int pX, int pY);
 
 		int x, y;
 
 		TAnimationSprite *img;
 
-		inline void render(CAnimationObjectStub * player, TClient * server, int pX, int pY);
+		inline void render(CAnimationObjectStub * player, int pX, int pY);
+
+	private:
+		TClient * client;
 };
 
 class TAnimation
 {
 	public:
-		explicit TAnimation(const CString& pName, TClient * theServer);
+		explicit TAnimation(const CString& pName, TClient * client);
 		~TAnimation();
 
 		bool loaded;
 		CString name, real;
 
 		bool load();
-		void render(CAnimationObjectStub* player, TClient * server, int pX, int pY, int pDir, int *pStep, float time);
+		void render(CAnimationObjectStub* player, int pX, int pY, int pDir, int *pStep, float time);
 
-		static TAnimation *find(const char *pName, TClient * theServer);
-		TImage *findImage(char *pName, TClient * theServer);
+		static TAnimation *find(const char *pName, TClient * client);
+		TImage *findImage(char *pName);
 	private:
 		bool isLoop = false, isContinuous = false, isSingleDir = false;
 		CString setBackTo;
 		std::unordered_map<std::string, TImage *> imageList;
 		std::unordered_map<int, TAnimationSprite *> animationSpriteList;
 		std::map<int, std::map<int, TAnimationAni *>> animationAniList;
-		TClient *server;
+		TClient *client;
 		float currentWait{};
 		float wait = 0.05f;
 		int max{};

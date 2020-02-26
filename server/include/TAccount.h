@@ -188,6 +188,7 @@ class TAccount : public CAnimationObjectStub
 		const CString& getShieldImage() const	{ return shieldImg; }
 		const CString& getSwordImage() const	{ return swordImg; }
 		const CString& getAnimation() const		{ return gani; }
+		const CString& getImage() const			{ return image; }
 		const CString& getAdminIp() const		{ return adminIp; }
 		const CString& getBanReason() const		{ return banReason; }
 		const CString& getBanLength() const		{ return banLength; }
@@ -225,7 +226,7 @@ class TAccount : public CAnimationObjectStub
 		// Player-Account
 		bool isBanned, isLoadOnly, isGuest;
 		bool isExternal;
-		CString adminIp, accountComments, accountName, communityName, banReason, banLength, lastFolder, email;
+		CString adminIp, accountComments, accountName, communityName, banReason, banLength, lastFolder, email, image;
 		CString accountIpStr;
 		long accountIp;
 		int adminRights;

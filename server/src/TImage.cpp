@@ -46,7 +46,7 @@ bool TImage::loadTexture(const CString& pImage) {
 	return true;
 }
 
-void TImage::render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pHeight, float r, float g, float b, float a) {
+void TImage::render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pHeight, int r, int g, int b, int a) {
 	if ( !texture || !loaded )
 		return;
 

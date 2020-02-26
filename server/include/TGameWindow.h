@@ -9,9 +9,13 @@
 #include <SDL_ttf.h>
 #include <SDL_mixer.h>
 
+#if SDL_VERSION_ATLEAST(2,0,0)
 #include <guisan.hpp>
 #include <guisan/sdl.hpp>
-
+#else
+#include <guichan.hpp>
+#include <guichan/sdl.hpp>
+#endif
 #include "IConfig.h"
 
 #include "TClient.h"
@@ -25,8 +29,14 @@
 #define RENDER_RESIZE_EVENT event.type == SDL_VIDEORESIZE
 #endif
 
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 480
+#define SCREEN_WIDTH 1280
+#define SCREEN_HEIGHT 720
+
+enum TextPosition {
+	LEFT,
+	RIGHT,
+	CENTERED
+};
 
 class TImage;
 
@@ -41,7 +51,7 @@ public:
 
 	bool doMain();
 
-	void drawText(const char *text);
+	void drawText(TTF_Font * textFont, const char * text, int x, int y, SDL_Color color, TextPosition p = LEFT);
 
 	static void renderSetAlpha(GameTexture * texture, Uint8 alpha);
 
@@ -57,6 +67,10 @@ public:
 
 	void renderPresent();
 
+	void renderSetWindowSize(int w, int h);
+
+	TTF_Font *font;
+	TTF_Font *fontSmaller;
 private:
 
 	TClient * client;
@@ -76,7 +90,6 @@ private:
 
 	int prevY;
 	std::map<Sint32, bool> keys;
-	TTF_Font *font;
 	static int BUFFER;
 
 	void sdlEvents();
@@ -94,7 +107,6 @@ private:
 	SDL_Surface *screen{};
 #endif
 
-
 	void createRenderer();
 
 	GameTexture * renderText(TTF_Font *font, const char *text, SDL_Color fg);
@@ -107,7 +119,11 @@ private:
 
 	/* Guichan SDL stuff we need */
 	gcn::SDLInput* input;             // Input driver
+#if SDL_VERSION_ATLEAST(2,0,0)
 	gcn::SDL2Graphics* graphics;       // Graphics driver
+#else
+	gcn::SDLGraphics* graphics;       // Graphics driver
+#endif
 	gcn::SDLImageLoader* imageLoader; // For loading images
 
 	/* Guichan stuff we need */

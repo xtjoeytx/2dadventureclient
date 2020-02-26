@@ -19,8 +19,7 @@ class TImage
 		bool loadTexture(const CString& pImage);
 		inline void render(int pX, int pY);
 		inline void render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pHeight, int alpha);
-		inline void render(int pX, int pY, float r, float g, float b, float a);
-		void render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pHeight, float r, float g, float b, float a);
+		void render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pHeight, int r, int g, int b, int a = SDL_ALPHA_OPAQUE);
 
 		static TImage *find(const std::string& pName, TClient * theServer, bool addIfMissing = false);
 
@@ -38,17 +37,12 @@ class TImage
 
 inline void TImage::render(int pX, int pY)
 {
-	render(pX, pY, 0, 0, width, height, 1.0f, 1.0f, 1.0f, 1.0f);
+	render(pX, pY, 0, 0, width, height, SDL_ALPHA_OPAQUE);
 }
 
 inline void TImage::render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pHeight, int alpha = SDL_ALPHA_OPAQUE)
 {
-	render(pX, pY, pStartX, pStartY, pWidth, pHeight, 1.0f, 1.0f, 1.0f, float(alpha));
-}
-
-inline void TImage::render(int pX, int pY, float r, float g, float b, float a)
-{
-	render(pX, pY, 0, 0, width, height, r, g, b, a);
+	render(pX, pY, pStartX, pStartY, pWidth, pHeight, 255, 255, 255, alpha);
 }
 
 #endif

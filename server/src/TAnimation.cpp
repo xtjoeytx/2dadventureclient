@@ -3,14 +3,14 @@
 #include "main.h"
 #include <SDL_image.h>
 #include <unordered_map>
+#include <utility>
 #include <TAccount.h>
 #include <CAnimationObjectStub.h>
 #include "TAnimation.h"
 
 /* Animations */
-TAnimation::TAnimation(const CString& pName, TClient * theServer)
+TAnimation::TAnimation(const CString& pName, TClient * client) : client(client)
 {
-	server = theServer;
 	name = pName;
 	real = pName.text() + pName.findl(CFileSystem::getPathSeparator()) + 1;
 	loaded = false;
@@ -42,7 +42,7 @@ TAnimation::~TAnimation()
 
 bool TAnimation::load()
 {
-	auto * fs = server->getFileSystem();
+	auto * fs = client->getFileSystem();
 	auto file = fs->load(real);
 	if (file == "")
 	{
@@ -83,7 +83,7 @@ bool TAnimation::load()
 			if (words.size() >= 8)
 				desc = words[7].text();
 
-			sprite = new TAnimationSprite(atoi(words[1].text()), words[2].text(), atoi(words[3].text()), atoi(words[4].text()), atoi(words[5].text()), atoi(words[6].text()), desc);
+			sprite = new TAnimationSprite(client, atoi(words[1].text()), words[2].text(), atoi(words[3].text()), atoi(words[4].text()), atoi(words[5].text()), atoi(words[6].text()), desc);
 
 			animationSpriteList.emplace(atoi(words[1].text()), sprite);
 		}
@@ -107,7 +107,7 @@ bool TAnimation::load()
 					sprite = atoi(words[i].text()); i++;
 					x      = atoi(words[i].text()); i++;
 					y      = atoi(words[i].text());
-					anis.emplace(k, new TAnimationAni(animationSpriteList[sprite], x, y));
+					anis.emplace(k, new TAnimationAni(client, animationSpriteList[sprite], x, y));
 					k++;
 				}
 				animationAniList.emplace(j, anis);
@@ -124,7 +124,7 @@ bool TAnimation::load()
 	return true;
 }
 
-void TAnimation::render(CAnimationObjectStub * player, TClient * server, int pX, int pY, int pDir, int *pStep, float time)
+void TAnimation::render(CAnimationObjectStub * player, int pX, int pY, int pDir, int *pStep, float time)
 {
 	if ( animationAniList.empty() )
 		return;
@@ -134,7 +134,7 @@ void TAnimation::render(CAnimationObjectStub * player, TClient * server, int pX,
 		*pStep = (*pStep + 1) % max;
 	} else {
 		auto delta = time;
-		currentWait += 0.025f;//(delta * 3);
+		currentWait +=(delta * 3); // 0.025f;//
 	}
 
 	if (*pStep >= max) *pStep = max-1;
@@ -147,31 +147,39 @@ void TAnimation::render(CAnimationObjectStub * player, TClient * server, int pX,
 
 	for (auto & i : list) {
 		if (i.second == nullptr) continue;
-		i.second->render(player, server, pX, pY);
+		i.second->render(player, pX, pY);
 	}
+
+	if (player->getChatMsg().length() > 0) {
+		client->gameWindow->drawText(client->gameWindow->fontSmaller, player->getChatMsg().text(), pX+24+1, pY-34+1,{0,0,0}, CENTERED);
+		client->gameWindow->drawText(client->gameWindow->fontSmaller, player->getChatMsg().text(), pX+24, pY-34,{255,255,255}, CENTERED);
+	}
+
+	client->gameWindow->drawText(client->gameWindow->fontSmaller, player->getNickname().text(), pX+24+1, pY+44+1,{0,0,0}, CENTERED);
+	client->gameWindow->drawText(client->gameWindow->fontSmaller, player->getNickname().text(), pX+24, pY+44,{255,255,255}, CENTERED);
 }
 
-TAnimation *TAnimation::find(const char *pName, TClient * theServer)
+TAnimation *TAnimation::find(const char *pName, TClient * client)
 {
 	auto aniIter = animations.find(pName);
 	if (aniIter != animations.end()) {
 		return aniIter->second;
 	}
-	auto ani = new TAnimation(theServer->getFileSystem(0)->find(pName), theServer);
+	auto ani = new TAnimation(client->getFileSystem(0)->find(pName), client);
 
 	while (!ani->loaded) ;
 
 	return ani;
 }
 
-TImage *TAnimation::findImage(char *pName, TClient * theServer)
+TImage *TAnimation::findImage(char *pName)
 {
 	auto imageIter = imageList.find(pName);
 	if ( imageIter != imageList.end()) {
 		return imageIter->second;
 	}
 
-	auto * img = TImage::find(pName, theServer);
+	auto * img = TImage::find(pName, client);
 	if (img != nullptr) {
 		imageList.emplace(pName, img);
 		return img;
@@ -180,23 +188,11 @@ TImage *TAnimation::findImage(char *pName, TClient * theServer)
 	return nullptr;
 }
 
-TAnimationSprite::TAnimationSprite(int pSprite, std::string pImage, int pX, int pY, int pW, int pH, std::string desc)
-{
-	sprite = pSprite;
-	img = pImage;
-	x = pX;
-	y = pY;
-	w = pW;
-	h = pH;
-	description = desc;
-}
+TAnimationSprite::TAnimationSprite(TClient * client, int pSprite, std::string pImage, int pX, int pY, int pW, int pH, std::string desc) : client(client), sprite(pSprite), img(std::move(pImage)), x(pX), y(pY), w(pW), h(pH), description(std::move(desc)) {}
 
-TAnimationSprite::~TAnimationSprite()
-{
+TAnimationSprite::~TAnimationSprite() = default;
 
-}
-
-void TAnimationSprite::render(CAnimationObjectStub * player, TClient * server, int pX, int pY)
+void TAnimationSprite::render(CAnimationObjectStub * player, int pX, int pY)
 {
 	TImage * image = nullptr;
 	std::string tmpImg;
@@ -217,7 +213,7 @@ void TAnimationSprite::render(CAnimationObjectStub * player, TClient * server, i
 		tmpImg = img;
 	}
 
-	image = TImage::find(tmpImg, server);
+	image = TImage::find(tmpImg, client);
 
 	if (image == nullptr)
 		return;
@@ -230,17 +226,12 @@ void TAnimationSprite::render(CAnimationObjectStub * player, TClient * server, i
 	image->render(pX, pY, x, y, w, h, alpha);
 }
 
-TAnimationAni::TAnimationAni(TAnimationSprite *pImg, int pX, int pY)
-{
-	img = pImg;
-	x = pX;
-	y = pY;
-}
+TAnimationAni::TAnimationAni(TClient * client, TAnimationSprite *pImg, int pX, int pY) : client(client), img(pImg), x(pX), y(pY) { }
 
-void TAnimationAni::render(CAnimationObjectStub * player, TClient * server, int pX, int pY)
+void TAnimationAni::render(CAnimationObjectStub * player, int pX, int pY)
 {
 	if (img == nullptr)
 		return;
 
-	img->render(player, server, pX + x, pY + y);
+	img->render(player, pX + x, pY + y);
 }

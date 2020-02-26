@@ -13,3 +13,6 @@
 [submodule "dependencies/guisan"]
 	path = dependencies/guisan
 	url = https://github.com/kallisti5/guisan.git
+[submodule "dependencies/guichan"]
+	path = dependencies/guichan
+	url = https://github.com/andryblack/guichan.git

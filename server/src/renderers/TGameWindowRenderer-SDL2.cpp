@@ -46,7 +46,7 @@ GameTexture * TGameWindow::renderLoadImage(const char *file) {
 }
 
 GameTexture * TGameWindow::renderText(TTF_Font * font, const char * text, SDL_Color fg) {
-	auto * surface = TTF_RenderText_Solid(font, text, fg);
+	auto * surface = TTF_RenderText_Blended_Wrapped(font, text, fg, screenWidth);
 
 	return SDL_CreateTextureFromSurface(renderer, surface);
 }
