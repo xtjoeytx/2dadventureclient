@@ -1399,12 +1399,7 @@ TNPC * TLevel::isOnNPC(int pX, int pY, bool checkEventFlag)
 
 bool TLevel::isOnWall(double pX, double pY)
 {
-	int roundX = int(round(pX));
-	int roundY = int(round(pY));
-	short tile = levelTiles[roundY * 64 + roundX];
-	unsigned char tiletype = tiletypes[tile];
-
-	return tiletype >= 20;
+	return tiletypes[levelTiles[int(round(pY)) * 64 + int(round(pX))]] >= 20;
 }
 
 bool TLevel::isOnWater(double pX, double pY)
