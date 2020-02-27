@@ -1335,8 +1335,11 @@ bool TLevel::doTimedEvents()
 	return true;
 }
 
+
 bool TLevel::isOnWall(double pX, double pY)
 {
+	if (pX < 0 || pY < 0 || pX > 63 || pY > 63) return true;
+
 	return tiletypes[levelTiles[int(round(pY)) * 64 + int(round(pX))]] >= 20;
 }
 
@@ -1344,6 +1347,7 @@ bool TLevel::isOnWater(double pX, double pY)
 {
 	return (tiletypes[levelTiles[(int)pY * 64 + (int)pX]] == 11);
 }
+
 #ifdef V8NPCSERVER
 std::vector<TNPC *> TLevel::findAreaNpcs(int pX, int pY, int pWidth, int pHeight)
 {

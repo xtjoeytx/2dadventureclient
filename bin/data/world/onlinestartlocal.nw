@@ -186,18 +186,8 @@ if (washit){
 NPCEND
 
 NPC - 32 32
-function onCreated() {
-	print("HI!");
-	npc.showcharacter();
-	npc.headimg = 'head1.png';
-	npc.bodyimg = 'body.png';
-	npc.show();
-	npc.ani = 'idle';
-	//npc.setshape(0, 32, 32);
-	npc.warpto("onlinestartlocal.nw", 30,30);
-	npc.message('HI!');
-
-	npc.timeout = 0.5;
+function random(min, max) {
+ 	return Math.floor(Math.random() * (max - min) ) + min;
 }
 
 let x1 = 0;
@@ -206,41 +196,43 @@ let y1 = 0;
 let y2 = 63;
 let speed = 0.3;
 let mode = 0;
-let runcounter = 40;
-let walkmode = 0;
+let runcounter = random(20,40);
+let walkmode = 1;
 
-function onPlayerEnters(player) {
-  // Initialize the this. variables
-  npc.timeout = 0.05;
-  walkmode = 1;
-  //if (wasthrown && walkmode>1) walkmode = 1;
+function onCreated() {
+	npc.showcharacter();
+	npc.show();
+	npc.ani = 'idle';
+	//npc.setshape(0, 32, 32);
+	npc.message('HI!');
+		npc.headimg = 'head3.png';
+    	npc.bodyimg = 'body.png';
+    		npc.warpto("onlinestartlocal.nw", random(20,30),30);
 
-  npc.ani = 'idle';
+	npc.timeout = 0.5;
 }
 
+
 function vecx(dir) {
-	return Math.cos(((Math.PI / 2) * dir+1));
+	return Math.cos((Math.PI / 2) * dir + 1);
 }
 
 function vecy(dir) {
-	return Math.sin(((Math.PI / 2) * dir+1));
+	return Math.sin((Math.PI / 2) * dir - 1);
 }
 
-function random(min, max) {
- 	return Math.floor(Math.random() * (max - min) ) + min;
-}
 
 // Walking stuff
 function onTimeout () {
 	// WALKING
 	npc.ani = 'walk';
 	let newx = npc.x + vecx(npc.dir)*speed;
-	let newy = npc.y - vecy(npc.dir)*speed;
+	let newy = npc.y + vecy(npc.dir)*speed;
 	runcounter--;
 	if (walkmode==1) { // RANDOM
 		if ( runcounter > 0 ) {
 			let testx = newx + 1.5 + vecx(npc.dir);
-			let testy = newy - 2 + vecy(npc.dir);
+			let testy = newy + 2 + vecy(npc.dir);
 
 			if (npc.level.onwall(testx,testy)) {
 				npc.dir = (npc.dir+2)%4;
@@ -259,8 +251,585 @@ function onTimeout () {
 	if (walkmode > 1 && runcounter <= 0)
 		runcounter = 20;
 
-	npc.message('players: ' + server.players.length + server.players[random(0,1)].account);
+	npc.message('Attack!');
 	npc.timeout = 0.05;
 }
 
 NPCEND
+
+NPC - 32 32
+function random(min, max) {
+ 	return Math.floor(Math.random() * (max - min) ) + min;
+}
+
+let x1 = 0;
+let x2 = 63;
+let y1 = 0;
+let y2 = 63;
+let speed = 0.3;
+let mode = 0;
+let runcounter = random(20,40);
+let walkmode = 1;
+
+function onCreated() {
+	npc.showcharacter();
+	npc.show();
+	npc.ani = 'idle';
+	//npc.setshape(0, 32, 32);
+	npc.message('HI!');
+		npc.headimg = 'head3.png';
+    	npc.bodyimg = 'body.png';
+    		npc.warpto("onlinestartlocal.nw", random(20,30),30);
+
+	npc.timeout = 0.5;
+}
+
+
+function vecx(dir) {
+	return Math.cos((Math.PI / 2) * dir + 1);
+}
+
+function vecy(dir) {
+	return Math.sin((Math.PI / 2) * dir - 1);
+}
+
+
+// Walking stuff
+function onTimeout () {
+	// WALKING
+	npc.ani = 'walk';
+	let newx = npc.x + vecx(npc.dir)*speed;
+	let newy = npc.y + vecy(npc.dir)*speed;
+	runcounter--;
+	if (walkmode==1) { // RANDOM
+		if ( runcounter > 0 ) {
+			let testx = newx + 1.5 + vecx(npc.dir);
+			let testy = newy + 2 + vecy(npc.dir);
+
+			if (npc.level.onwall(testx,testy)) {
+				npc.dir = (npc.dir+2)%4;
+				runcounter = random(0,60);
+			} else {
+
+				npc.x = newx;
+				npc.y = newy;
+			}
+		} else {
+			runcounter = random(10,40);
+			npc.dir = ((npc.dir+1+random(0,2)*2)%4);
+		}
+	}
+
+	if (walkmode > 1 && runcounter <= 0)
+		runcounter = 20;
+
+	npc.message('Attack!');
+	npc.timeout = 0.05;
+}
+
+NPCEND
+
+NPC - 32 32
+function random(min, max) {
+ 	return Math.floor(Math.random() * (max - min) ) + min;
+}
+
+let x1 = 0;
+let x2 = 63;
+let y1 = 0;
+let y2 = 63;
+let speed = 0.3;
+let mode = 0;
+let runcounter = random(20,40);
+let walkmode = 1;
+
+function onCreated() {
+	npc.showcharacter();
+	npc.show();
+	npc.ani = 'idle';
+	//npc.setshape(0, 32, 32);
+	npc.message('HI!');
+		npc.headimg = 'head3.png';
+    	npc.bodyimg = 'body.png';
+    		npc.warpto("onlinestartlocal.nw", random(20,30),30);
+
+	npc.timeout = 0.5;
+}
+
+
+function vecx(dir) {
+	return Math.cos((Math.PI / 2) * dir + 1);
+}
+
+function vecy(dir) {
+	return Math.sin((Math.PI / 2) * dir - 1);
+}
+
+
+// Walking stuff
+function onTimeout () {
+	// WALKING
+	npc.ani = 'walk';
+	let newx = npc.x + vecx(npc.dir)*speed;
+	let newy = npc.y + vecy(npc.dir)*speed;
+	runcounter--;
+	if (walkmode==1) { // RANDOM
+		if ( runcounter > 0 ) {
+			let testx = newx + 1.5 + vecx(npc.dir);
+			let testy = newy + 2 + vecy(npc.dir);
+
+			if (npc.level.onwall(testx,testy)) {
+				npc.dir = (npc.dir+2)%4;
+				runcounter = random(0,60);
+			} else {
+
+				npc.x = newx;
+				npc.y = newy;
+			}
+		} else {
+			runcounter = random(10,40);
+			npc.dir = ((npc.dir+1+random(0,2)*2)%4);
+		}
+	}
+
+	if (walkmode > 1 && runcounter <= 0)
+		runcounter = 20;
+
+	npc.message('Attack!');
+	npc.timeout = 0.05;
+}
+
+NPCEND
+
+NPC - 32 32
+function random(min, max) {
+ 	return Math.floor(Math.random() * (max - min) ) + min;
+}
+
+let x1 = 0;
+let x2 = 63;
+let y1 = 0;
+let y2 = 63;
+let speed = 0.3;
+let mode = 0;
+let runcounter = random(20,40);
+let walkmode = 1;
+
+function onCreated() {
+	npc.showcharacter();
+	npc.show();
+	npc.ani = 'idle';
+	//npc.setshape(0, 32, 32);
+	npc.message('HI!');
+		npc.headimg = 'head3.png';
+    	npc.bodyimg = 'body.png';
+    		npc.warpto("onlinestartlocal.nw", random(20,30),30);
+
+	npc.timeout = 0.5;
+}
+
+
+function vecx(dir) {
+	return Math.cos((Math.PI / 2) * dir + 1);
+}
+
+function vecy(dir) {
+	return Math.sin((Math.PI / 2) * dir - 1);
+}
+
+
+// Walking stuff
+function onTimeout () {
+	// WALKING
+	npc.ani = 'walk';
+	let newx = npc.x + vecx(npc.dir)*speed;
+	let newy = npc.y + vecy(npc.dir)*speed;
+	runcounter--;
+	if (walkmode==1) { // RANDOM
+		if ( runcounter > 0 ) {
+			let testx = newx + 1.5 + vecx(npc.dir);
+			let testy = newy + 2 + vecy(npc.dir);
+
+			if (npc.level.onwall(testx,testy)) {
+				npc.dir = (npc.dir+2)%4;
+				runcounter = random(0,60);
+			} else {
+
+				npc.x = newx;
+				npc.y = newy;
+			}
+		} else {
+			runcounter = random(10,40);
+			npc.dir = ((npc.dir+1+random(0,2)*2)%4);
+		}
+	}
+
+	if (walkmode > 1 && runcounter <= 0)
+		runcounter = 20;
+
+	npc.message('Attack!');
+	npc.timeout = 0.05;
+}
+
+NPCEND
+
+NPC - 32 32
+function random(min, max) {
+ 	return Math.floor(Math.random() * (max - min) ) + min;
+}
+
+let x1 = 0;
+let x2 = 63;
+let y1 = 0;
+let y2 = 63;
+let speed = 0.3;
+let mode = 0;
+let runcounter = random(20,40);
+let walkmode = 1;
+
+function onCreated() {
+	npc.showcharacter();
+	npc.show();
+	npc.ani = 'idle';
+	//npc.setshape(0, 32, 32);
+	npc.message('HI!');
+		npc.headimg = 'head3.png';
+    	npc.bodyimg = 'body.png';
+    		npc.warpto("onlinestartlocal.nw", random(20,30),30);
+
+	npc.timeout = 0.5;
+}
+
+
+function vecx(dir) {
+	return Math.cos((Math.PI / 2) * dir + 1);
+}
+
+function vecy(dir) {
+	return Math.sin((Math.PI / 2) * dir - 1);
+}
+
+
+// Walking stuff
+function onTimeout () {
+	// WALKING
+	npc.ani = 'walk';
+	let newx = npc.x + vecx(npc.dir)*speed;
+	let newy = npc.y + vecy(npc.dir)*speed;
+	runcounter--;
+	if (walkmode==1) { // RANDOM
+		if ( runcounter > 0 ) {
+			let testx = newx + 1.5 + vecx(npc.dir);
+			let testy = newy + 2 + vecy(npc.dir);
+
+			if (npc.level.onwall(testx,testy)) {
+				npc.dir = (npc.dir+2)%4;
+				runcounter = random(0,60);
+			} else {
+
+				npc.x = newx;
+				npc.y = newy;
+			}
+		} else {
+			runcounter = random(10,40);
+			npc.dir = ((npc.dir+1+random(0,2)*2)%4);
+		}
+	}
+
+	if (walkmode > 1 && runcounter <= 0)
+		runcounter = 20;
+
+	npc.message('Attack!');
+	npc.timeout = 0.05;
+}
+
+NPCEND
+
+NPC - 32 32
+function random(min, max) {
+ 	return Math.floor(Math.random() * (max - min) ) + min;
+}
+
+let x1 = 0;
+let x2 = 63;
+let y1 = 0;
+let y2 = 63;
+let speed = 0.3;
+let mode = 0;
+let runcounter = random(20,40);
+let walkmode = 1;
+
+function onCreated() {
+	npc.showcharacter();
+	npc.show();
+	npc.ani = 'idle';
+	//npc.setshape(0, 32, 32);
+	npc.message('HI!');
+		npc.headimg = 'head3.png';
+    	npc.bodyimg = 'body.png';
+    		npc.warpto("onlinestartlocal.nw", random(20,30),30);
+
+	npc.timeout = 0.5;
+}
+
+
+function vecx(dir) {
+	return Math.cos((Math.PI / 2) * dir + 1);
+}
+
+function vecy(dir) {
+	return Math.sin((Math.PI / 2) * dir - 1);
+}
+
+
+// Walking stuff
+function onTimeout () {
+	// WALKING
+	npc.ani = 'walk';
+	let newx = npc.x + vecx(npc.dir)*speed;
+	let newy = npc.y + vecy(npc.dir)*speed;
+	runcounter--;
+	if (walkmode==1) { // RANDOM
+		if ( runcounter > 0 ) {
+			let testx = newx + 1.5 + vecx(npc.dir);
+			let testy = newy + 2 + vecy(npc.dir);
+
+			if (npc.level.onwall(testx,testy)) {
+				npc.dir = (npc.dir+2)%4;
+				runcounter = random(0,60);
+			} else {
+
+				npc.x = newx;
+				npc.y = newy;
+			}
+		} else {
+			runcounter = random(10,40);
+			npc.dir = ((npc.dir+1+random(0,2)*2)%4);
+		}
+	}
+
+	if (walkmode > 1 && runcounter <= 0)
+		runcounter = 20;
+
+	npc.message('Attack!');
+	npc.timeout = 0.05;
+}
+
+NPCEND
+
+NPC - 32 32
+function random(min, max) {
+ 	return Math.floor(Math.random() * (max - min) ) + min;
+}
+
+let x1 = 0;
+let x2 = 63;
+let y1 = 0;
+let y2 = 63;
+let speed = 0.3;
+let mode = 0;
+let runcounter = random(20,40);
+let walkmode = 1;
+
+function onCreated() {
+	npc.showcharacter();
+	npc.show();
+	npc.ani = 'idle';
+	//npc.setshape(0, 32, 32);
+	npc.message('HI!');
+		npc.headimg = 'head3.png';
+    	npc.bodyimg = 'body.png';
+    		npc.warpto("onlinestartlocal.nw", random(20,30),30);
+
+	npc.timeout = 0.5;
+}
+
+
+function vecx(dir) {
+	return Math.cos((Math.PI / 2) * dir + 1);
+}
+
+function vecy(dir) {
+	return Math.sin((Math.PI / 2) * dir - 1);
+}
+
+
+// Walking stuff
+function onTimeout () {
+	// WALKING
+	npc.ani = 'walk';
+	let newx = npc.x + vecx(npc.dir)*speed;
+	let newy = npc.y + vecy(npc.dir)*speed;
+	runcounter--;
+	if (walkmode==1) { // RANDOM
+		if ( runcounter > 0 ) {
+			let testx = newx + 1.5 + vecx(npc.dir);
+			let testy = newy + 2 + vecy(npc.dir);
+
+			if (npc.level.onwall(testx,testy)) {
+				npc.dir = (npc.dir+2)%4;
+				runcounter = random(0,60);
+			} else {
+
+				npc.x = newx;
+				npc.y = newy;
+			}
+		} else {
+			runcounter = random(10,40);
+			npc.dir = ((npc.dir+1+random(0,2)*2)%4);
+		}
+	}
+
+	if (walkmode > 1 && runcounter <= 0)
+		runcounter = 20;
+
+	npc.message('Attack!');
+	npc.timeout = 0.05;
+}
+
+NPCEND
+
+NPC - 32 32
+function random(min, max) {
+ 	return Math.floor(Math.random() * (max - min) ) + min;
+}
+
+let x1 = 0;
+let x2 = 63;
+let y1 = 0;
+let y2 = 63;
+let speed = 0.3;
+let mode = 0;
+let runcounter = random(20,40);
+let walkmode = 1;
+
+function onCreated() {
+	npc.showcharacter();
+	npc.show();
+	npc.ani = 'idle';
+	//npc.setshape(0, 32, 32);
+	npc.message('HI!');
+		npc.headimg = 'head3.png';
+    	npc.bodyimg = 'body.png';
+    		npc.warpto("onlinestartlocal.nw", random(20,30),30);
+
+	npc.timeout = 0.5;
+}
+
+
+function vecx(dir) {
+	return Math.cos((Math.PI / 2) * dir + 1);
+}
+
+function vecy(dir) {
+	return Math.sin((Math.PI / 2) * dir - 1);
+}
+
+
+// Walking stuff
+function onTimeout () {
+	// WALKING
+	npc.ani = 'walk';
+	let newx = npc.x + vecx(npc.dir)*speed;
+	let newy = npc.y + vecy(npc.dir)*speed;
+	runcounter--;
+	if (walkmode==1) { // RANDOM
+		if ( runcounter > 0 ) {
+			let testx = newx + 1.5 + vecx(npc.dir);
+			let testy = newy + 2 + vecy(npc.dir);
+
+			if (npc.level.onwall(testx,testy)) {
+				npc.dir = (npc.dir+2)%4;
+				runcounter = random(0,60);
+			} else {
+
+				npc.x = newx;
+				npc.y = newy;
+			}
+		} else {
+			runcounter = random(10,40);
+			npc.dir = ((npc.dir+1+random(0,2)*2)%4);
+		}
+	}
+
+	if (walkmode > 1 && runcounter <= 0)
+		runcounter = 20;
+
+	npc.message('Attack!');
+	npc.timeout = 0.05;
+}
+
+NPCEND
+
+NPC - 32 32
+function random(min, max) {
+ 	return Math.floor(Math.random() * (max - min) ) + min;
+}
+
+let x1 = 0;
+let x2 = 63;
+let y1 = 0;
+let y2 = 63;
+let speed = 0.3;
+let mode = 0;
+let runcounter = random(20,40);
+let walkmode = 1;
+
+function onCreated() {
+	npc.showcharacter();
+	npc.show();
+	npc.ani = 'idle';
+	//npc.setshape(0, 32, 32);
+	npc.message('HI!');
+		npc.headimg = 'head3.png';
+    	npc.bodyimg = 'body.png';
+    		npc.warpto("onlinestartlocal.nw", random(20,30),30);
+
+	npc.timeout = 0.5;
+}
+
+
+function vecx(dir) {
+	return Math.cos((Math.PI / 2) * dir + 1);
+}
+
+function vecy(dir) {
+	return Math.sin((Math.PI / 2) * dir - 1);
+}
+
+
+// Walking stuff
+function onTimeout () {
+	// WALKING
+	npc.ani = 'walk';
+	let newx = npc.x + vecx(npc.dir)*speed;
+	let newy = npc.y + vecy(npc.dir)*speed;
+	runcounter--;
+	if (walkmode==1) { // RANDOM
+		if ( runcounter > 0 ) {
+			let testx = newx + 1.5 + vecx(npc.dir);
+			let testy = newy + 2 + vecy(npc.dir);
+
+			if (npc.level.onwall(testx,testy)) {
+				npc.dir = (npc.dir+2)%4;
+				runcounter = random(0,60);
+			} else {
+
+				npc.x = newx;
+				npc.y = newy;
+			}
+		} else {
+			runcounter = random(10,40);
+			npc.dir = ((npc.dir+1+random(0,2)*2)%4);
+		}
+	}
+
+	if (walkmode > 1 && runcounter <= 0)
+		runcounter = 20;
+
+	npc.message('Attack!');
+	npc.timeout = 0.05;
+}
+
+NPCEND
+
