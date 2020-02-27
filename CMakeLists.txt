@@ -185,6 +185,7 @@ elseif(WIN32)
 		add_definitions(-D_BSD_SOURCE=1)
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++17")
+		add_definitions(-U__MINGW32__)
 	endif()
 
 	# Prevent Windows.h from clashing with the Standard Template Library so we
@@ -210,6 +211,7 @@ endif()
 
 if(NOT NOSTATIC)
 	find_package(PNG)
+	find_package(Freetype REQUIRED)
 endif()
 
 # Prefer static linkage
@@ -250,7 +252,7 @@ if(NOT NOUPNP)
 	endif()
 endif()
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/dependencies/opengs1)
+#add_subdirectory(${PROJECT_SOURCE_DIR}/dependencies/opengs1)
 
 find_package(Threads REQUIRED)
 if (AMIGA)
@@ -269,9 +271,10 @@ if (AMIGA)
 	find_package(SDL_ttf REQUIRED)
 	set(SDL2_ttf_LIBRARY ${SDL_TTF_LIBRARY})
 	set(SDL2_ttf_INCLUDE_DIR ${SDL_TTF_INCLUDE_DIR})
-
-	find_package(Freetype REQUIRED)
 else()
+	if(NOT NOSTATIC AND MINGW)
+		set(CMAKE_FIND_LIBRARY_SUFFIXES ${SUFFIXES_ORIG})
+	endif()
 	find_package(SDL2 REQUIRED)
 	find_package(SDL2_image REQUIRED)
 	find_package(SDL2_mixer REQUIRED)
@@ -287,3 +290,4 @@ endif()
 add_subdirectory(${PROJECT_SOURCE_DIR}/dependencies/gs2lib)
 add_subdirectory(${PROJECT_SOURCE_DIR}/bin)
 add_subdirectory(${PROJECT_SOURCE_DIR}/server)
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})

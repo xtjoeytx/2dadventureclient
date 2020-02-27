@@ -199,12 +199,12 @@ class TLevel
 		//! \return Currently, it always returns true.
 		bool doTimedEvents();
 
+		bool isOnWall(double pX, double pY);
+		bool isOnWater(double pX, double pY);
 #ifdef V8NPCSERVER
 		std::vector<TNPC *> findAreaNpcs(int pX, int pY, int pWidth, int pHeight);
 		TLevelLink *isOnLink(int pX, int pY);
 		TNPC *isOnNPC(int pX, int pY, bool checkEventFlag = false);
-		bool isOnWall(double pX, double pY);
-		bool isOnWater(double pX, double pY);
 		void sendChatToLevel(const TPlayer *player, const CString& message);
 
 		inline IScriptWrapped<TLevel> * getScriptObject() const {

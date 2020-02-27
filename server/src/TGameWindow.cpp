@@ -124,7 +124,7 @@ TGameWindow::TGameWindow(TClient* client) : client(client), tileset(nullptr) {
 	// Set the dimension of the top container to match the screen.
 	//top->setDimension(gcn::Rectangle(0, 0, screenWidth*2, screenHeight*2));
 	top->setOpaque(false);
-	top->setBaseColor(gcn::Color(255, 255, 255, 190));
+	top->setBaseColor(gcn::Color(255, 255, 255, 255));
 	top->setSize(screenWidth, screenHeight);
 
 	gui = new gcn::Gui();
@@ -184,6 +184,7 @@ TGameWindow::TGameWindow(TClient* client) : client(client), tileset(nullptr) {
 	inputBox->setTabInEnabled(true);
 	inputBox->setTabOutEnabled(true);
 	inputBox->setBackgroundColor(gcn::Color(255,255,255,255));
+	inputBox->setBaseColor(gcn::Color(255,255,255,255));
 	inputBox->setActionEventId("inputbox_enter");
 	inputBox->addActionListener(buttonActionListener);
 	inputBox->addFocusListener(focusActionListener);

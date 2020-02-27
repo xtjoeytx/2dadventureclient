@@ -22,6 +22,9 @@
 	#ifndef SIGBREAK
 		#define SIGBREAK SIGQUIT
 	#endif
+#else
+#include <minwindef.h>
+#include <processenv.h>
 #endif
 
 // Function pointer for signal handling.
@@ -165,7 +168,7 @@ int main(int argc, char* argv[])
 		// Announce that the program is now running.
 		clientLog.out(":: Program started.\n");
 	#if defined(WIN32) || defined(WIN64)
-		serverlog.out(":: Press CTRL+C to close the program.  DO NOT CLICK THE X, you will LOSE data!\n");
+		clientLog.out(":: Press CTRL+C to close the program.  DO NOT CLICK THE X, you will LOSE data!\n");
 	#endif
 
 #ifndef __AMIGA__
@@ -285,12 +288,12 @@ void getBasePath()
 
 	// Find the program exe and remove it from the path.
 	// Assign the path to homepath.
-	homepath = path;
-	homepath += "\\";
-	int pos = homepath.findl('\\');
-	if (pos == -1) homepath.clear();
-	else if (pos != (homepath.length() - 1))
-		homepath.removeI(++pos, homepath.length());
+	homePath = path;
+	homePath += "\\";
+	int pos = homePath.findl('\\');
+	if (pos == -1) homePath.clear();
+	else if (pos != (homePath.length() - 1))
+		homePath.removeI(++pos, homePath.length());
 #else
 	// Get the path to the program.
 	char path[260];

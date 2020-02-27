@@ -180,7 +180,6 @@ if(V8NPCSERVER)
 	include_directories(${V8_INCLUDE_DIR})
 endif()
 include_directories(${SDL2_INCLUDE_DIR} ${SDL2_image_INCLUDE_DIR} ${SDL2_ttf_INCLUDE_DIR} ${SDL2_mixer_INCLUDE_DIR})
-include_directories(${ZLIB_INCLUDE_DIR})
 
 if(NOT NOUPNP AND NOT MINIUPNPC_FOUND)
 	include_directories(${PROJECT_SOURCE_DIR}/dependencies/miniupnp ${PROJECT_SOURCE_DIR}/dependencies/miniupnp/miniupnpc)
@@ -237,10 +236,6 @@ endif()
 
 add_dependencies(${TARGET_NAME} gs2lib)
 target_link_libraries(${TARGET_NAME} gs2lib)
-#add_dependencies(${TARGET_NAME} KiWi)
-#target_link_libraries(${TARGET_NAME} KiWi)
-#include_directories(${PROJECT_SOURCE_DIR}/dependencies/kiwi/src)
-
 add_compile_definitions(__AMIGA__)
 
 if(NOT NOUPNP)
@@ -266,8 +261,8 @@ if(V8NPCSERVER)
 	endif()
 endif()
 
-target_link_libraries(${TARGET_NAME} ${SDL2_image_LIBRARY} ${SDL2_mixer_LIBRARY} ${SDL2_ttf_LIBRARY} ${SDL2_LIBRARY} ${PNG_LIBRARY} ${FREETYPE_LIBRARY})
-target_link_libraries(${TARGET_NAME} gs1common gs1parse gs1compiler gs1vm)
+target_link_libraries(${TARGET_NAME} ${SDL2_image_LIBRARY} ${SDL2_mixer_LIBRARY} ${SDL2_ttf_LIBRARY} SDL2::SDL2main ${PNG_LIBRARY} ${FREETYPE_LIBRARY} ${JPEG_LIBRARY} ${TIFF_LIBRARY} ${WebP_LIBRARY})
+#target_link_libraries(${TARGET_NAME} gs1common gs1parse gs1compiler gs1vm)
 
 file(GLOB TEXT
 	"${PROJECT_NAME_LOWER}.wasm"

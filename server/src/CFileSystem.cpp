@@ -1,12 +1,12 @@
 #include "IDebug.h"
 #include <sys/stat.h>
-#if !defined(_WIN32) && !defined(_WIN64)
-	#include <dirent.h>
-	#include <utime.h>
-#else
+#if (defined(_WIN32) || defined(_WIN64)) && !defined(__GNUC__)
 	#include <sys/utime.h>
 	#define _utime utime
 	#define _utimbuf utimbuf;
+#else
+	#include <dirent.h>
+	#include <utime.h>
 #endif
 #include <map>
 #include "IDebug.h"
@@ -163,7 +163,7 @@ CString CFileSystem::fileExistsAs(const CString& file) const
 	return CString();
 }
 
-#if defined(_WIN32) || defined(_WIN64)
+#if (defined(_WIN32) || defined(_WIN64)) && !defined(__GNUC__)
 void CFileSystem::loadAllDirectories(const CString& directory, bool recursive)
 {
 	CString dir = CString() << directory.remove(directory.findl(fSep)) << fSep;
@@ -180,7 +180,7 @@ void CFileSystem::loadAllDirectories(const CString& directory, bool recursive)
 				{
 					// We need to add the directory to the directory list.
 					CString newDir = CString() << dir << filedata.cFileName << fSep;
-					newDir.removeI(0, server->getServerPath().length());
+					newDir.removeI(0, server->getRunnerPath().length());
 					addDir(newDir, "*", true);
 				}
 			}

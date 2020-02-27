@@ -20,6 +20,7 @@
 #include "CFileSystem.h"
 #include "CSettings.h"
 //#include "CSocket.h"
+#include "CRunnerStub.h"
 #include "CAnimationObjectStub.h"
 #include "CTranslationManager.h"
 #include "CWordFilter.h"
