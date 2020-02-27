@@ -1270,7 +1270,7 @@ void TNPC::saveNPC()
 	_scriptExecutionContext.getExecutionData();
 
 	static const char *NL = "\r\n";
-	CString fileName = server->getServerPath() << "npcs/npc" << npcName << ".txt";
+	CString fileName = server->getRunnerPath() << "npcs/npc" << npcName << ".txt";
 	CString fileData = CString("GRNPC001") << NL;
 	fileData << "NAME " << npcName << NL;
 	fileData << "ID " << CString(id) << NL;

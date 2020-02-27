@@ -368,7 +368,7 @@ WordFilterActions:
 	if (actionsFound & FILTER_ACTION_LOG)
 	{
 		CLog wordfilter;
-		wordfilter.setFilename(CString() << server->getServerPath() << "logs/serverlog.txt");
+		wordfilter.setFilename(CString() << server->getRunnerPath() << "logs/serverlog.txt");
 		wordfilter.setEnabled(true);
 		wordfilter.out("[Word Filter] Player %s was caught using these words: %s\n", player->getAccountName().text(), badwords.text());
 	}

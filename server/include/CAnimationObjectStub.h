@@ -1,10 +1,6 @@
 #ifndef GS2EMU_CGANIOBJECTSTUB_H
 #define GS2EMU_CGANIOBJECTSTUB_H
 
-#ifdef V8NPCSERVER
-#include "CScriptEngine.h"
-#endif
-
 #include <CString.h>
 #include "TLevel.h"
 
@@ -32,6 +28,10 @@ public:
 	virtual const CString &getChatMsg() const = 0;
 
 	virtual const CString &getImage() const = 0;
+
+	virtual int getWidth() const = 0;
+
+	virtual int getHeight() const = 0;
 
 	virtual TLevel * getLevel() const = 0;
 

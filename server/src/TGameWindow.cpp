@@ -337,10 +337,10 @@ void TGameWindow::drawScreen() {
 			CString tmpLvlName = mapLevels.readString("\n");
 			level = client->getLevel(tmpLvlName.guntokenizeI());
 
-			int gmapX = (level->getMap() ? level->getMap()->getLevelX(level->getLevelName()) : 0);
-			int gmapY = (level->getMap() ? level->getMap()->getLevelY(level->getLevelName()) : 0);
-
 			if ( level ) {
+				int gmapX = (level->getMap() ? level->getMap()->getLevelX(level->getLevelName()) : 0);
+				int gmapY = (level->getMap() ? level->getMap()->getLevelY(level->getLevelName()) : 0);
+
 				for ( y = 0; y < levelHeight; y++ ) {
 					for ( x = 0; x < levelWidth; x++ ) {
 						tileDest.x = (x * tile.w) + ((levelWidth * tile.w) * gmapX) - cameraX;
@@ -355,6 +355,7 @@ void TGameWindow::drawScreen() {
 					}
 				}
 
+				/*
 				for (auto *sign : *level->getLevelSigns()) {
 					auto signDest = SDL_Rect({static_cast<Sint16>((sign->getX()*tile.w) + ((levelWidth * tile.w) * gmapX) - cameraX),static_cast<Sint16>((sign->getY() * tile.h) + ((levelHeight * tile.h) * gmapY) - cameraY),32,16});
 					SDL_SetRenderDrawColor(renderer, 255,0,0,255);
@@ -368,6 +369,9 @@ void TGameWindow::drawScreen() {
 
 					SDL_RenderDrawRect(renderer, &linkDest);
 				}
+
+				SDL_SetRenderDrawColor(renderer, 0,0,0,0);
+				*/
 
 				for (auto *chest : *level->getLevelChests()) {
 					auto chestDest = SDL_Rect({ static_cast<Sint16>((chest->getX() * tile.w) + ((levelWidth * tile.w) * gmapX) - cameraX), static_cast<Sint16>((chest->getY() * tile.h) + ((levelHeight * tile.h) * gmapY) - cameraY), 32, 32});
@@ -398,11 +402,11 @@ void TGameWindow::drawScreen() {
 		});
 
 		for (auto animationObject : animationObjects) {
-			if (animationObject->getImage() != "") {
+			if (!animationObject->getImage().match("#c#")) {
 				TImage* tmpImg = TImage::find(animationObject->getImage().text(), client);
 				if (tmpImg)
-					tmpImg->render(((levelWidth * tile.w) * (animationObject->getLevel()->getMap() ? animationObject->getLevel()->getMap()->getLevelX(animationObject->getLevel()->getLevelName()) : 0)) + animationObject->getPixelX() - cameraX, ((levelHeight * tile.h) * (animationObject->getLevel()->getMap() ? animationObject->getLevel()->getMap()->getLevelY(animationObject->getLevel()->getLevelName()) : 0)) + animationObject->getPixelY()- cameraY);//, 0, 0, levelNpc->getWidth(), levelNpc->getHeight());
-			} else if (animationObject->getAnimation() != "") {
+					tmpImg->render(((levelWidth * tile.w) * (animationObject->getLevel()->getMap() ? animationObject->getLevel()->getMap()->getLevelX(animationObject->getLevel()->getLevelName()) : 0)) + animationObject->getPixelX() - cameraX, ((levelHeight * tile.h) * (animationObject->getLevel()->getMap() ? animationObject->getLevel()->getMap()->getLevelY(animationObject->getLevel()->getLevelName()) : 0)) + animationObject->getPixelY()- cameraY, 0, 0, animationObject->getWidth(), animationObject->getHeight());
+			} else if (animationObject->getImage().match("#c#")) {
 				drawAnimation(animationObject, ((levelWidth * tile.w) * (animationObject->getLevel()->getMap() ? animationObject->getLevel()->getMap()->getLevelX(animationObject->getLevel()->getLevelName()) : 0)) + animationObject->getPixelX() - cameraX, ((levelHeight * tile.h) * (animationObject->getLevel()->getMap() ? animationObject->getLevel()->getMap()->getLevelY(animationObject->getLevel()->getLevelName()) : 0)) + animationObject->getPixelY() - cameraY, time_diff.count());
 			}
 		}
@@ -522,15 +526,20 @@ void TGameWindow::sdlEvents() {
 		ani = "walk";
 	}
 
-	int x2 = client->localPlayer->getPixelX() + moveX;
-	int y2 = client->localPlayer->getPixelY() + moveY;
+	int testx = ((client->localPlayer->getPixelX()+moveX+32)/16);
+	int testy = ((client->localPlayer->getPixelY()+moveY+44)/16);
 
-	unsigned short fixedX = abs(x2) << 1, fixedY = abs(y2) << 1;
-	if (x2 < 0) fixedX |= 0x0001;
-	if (y2 < 0) fixedY |= 0x0001;
+	if (!client->localPlayer->getLevel()->isOnWall(testx,testy)) {
+		int x2 = client->localPlayer->getPixelX() + moveX;
+		int y2 = client->localPlayer->getPixelY() + moveY;
 
-	client->localPlayer->setProps(CString() >> char(PLPROP_X2) >> short(fixedX) >> char(PLPROP_Y2) >> short(fixedY), true, false, client->localPlayer);
-	client->localPlayer->setProps(CString() >> char(PLPROP_SPRITE) >> char(dir) >> char(PLPROP_GANI) >> char(strlen(ani)) << ani, true, false, client->localPlayer);
+		unsigned short fixedX = abs(x2) << 1, fixedY = abs(y2) << 1;
+		if (x2 < 0) fixedX |= 0x0001;
+		if (y2 < 0) fixedY |= 0x0001;
+
+		client->localPlayer->setProps(CString() >> char(PLPROP_X2) >> short(fixedX) >> char(PLPROP_Y2) >> short(fixedY), true, false, client->localPlayer);
+		client->localPlayer->setProps(CString() >> char(PLPROP_SPRITE) >> char(dir) >> char(PLPROP_GANI) >> char(strlen(ani)) << ani, true, false, client->localPlayer);
+	}
 }
 
 void TGameWindow::drawAnimation(CAnimationObjectStub* animationObject, int x, int y, float time) {

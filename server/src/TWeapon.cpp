@@ -43,7 +43,7 @@ TWeapon::~TWeapon()
 TWeapon * TWeapon::loadWeapon(const CString& pWeapon, TClient *server)
 {
 	// File Path
-	CString fileName = server->getServerPath() << "weapons/" << pWeapon;
+	CString fileName = server->getRunnerPath() << "weapons/" << pWeapon;
 
 	// Load File
 	CString fileData;
@@ -83,7 +83,7 @@ TWeapon * TWeapon::loadWeapon(const CString& pWeapon, TClient *server)
 		{
 			CString fname = curLine.readString("");
 			CString bytecode;
-			bytecode.load(server->getServerPath() << "weapon_bytecode/" << fname);
+			bytecode.load(server->getRunnerPath() << "weapon_bytecode/" << fname);
 
 			if (!bytecode.isEmpty())
 				byteCode.push_back(std::pair<CString, CString>(fname, bytecode));
@@ -139,7 +139,7 @@ bool TWeapon::saveWeapon()
 	name.replaceAllI("*", "@");
 	name.replaceAllI(":", ";");
 	name.replaceAllI("?", "!");
-	CString filename = server->getServerPath() << "weapons/weapon" << name << ".txt";
+	CString filename = server->getRunnerPath() << "weapons/weapon" << name << ".txt";
 
 	// Write the File.
 	CString output = "GRAWP001\r\n";

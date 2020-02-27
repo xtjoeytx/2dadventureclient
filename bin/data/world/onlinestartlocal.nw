@@ -29,7 +29,7 @@ BOARD 0 26 64 0 f/f/f/f/f/f/Ahf/f/f/AwAxAwAxAwAxAwAxf/AwAxAwAxAwAxAwAxf/f/AwAxAw
 BOARD 0 27 64 0 AAABf/f/f/f/f/f/AAABAwAxf/f/f/f/AwAxf/AwAxf/OLf/K3AwAxf/AwAxf/f/AAABAwAxf/AwAxf/f/f/f/AwAxAAABAwAxf/f/f/f/f/f/K4f/f/f/f/f/f/AQf/
 BOARD 0 28 64 0 f/AQf/f/f/f/f/K4f/AwAxf/f/f/AAABf/f/f/AwAxAAABf/f/AwAxf/AwAxK3f/f/f/AwAxf/AwAxAAABf/f/AwAxf/f/AwAxf/f/f/AAABf/f/f/f/f/AAABf/f/f/
 BOARD 0 29 64 0 f/f/f/AAABf/f/f/f/AwAxf/f/AAABf/OLf/f/AwAxf/AAABf/AwAxf/AwAxf/AAABf/AwAxf/AwAxf/f/Knf/AwAxf/f/AwAxf/f/f/f/f/f/f/f/f/f/f/f/f/f/f/
-BOARD 0 30 64 0 f/f/f/f/f/f/f/f/f/AwAxf/Knf/f/f/f/AAABAwAxf/f/f/f/AwAxf/AwAxAAABf/f/AwAxf/AwAxK3f/f/f/AwAxf/f/AwAxf/f/f/f/f/f/f/f/f/f/AQf/f/f/f/
+BOARD 0 30 64 0 f/f/f/f/f/f/f/f/f/AwAxf/Knf/f/f/f/AAABAwAxAwAxAwAxAwAxf/AwAxAAABf/f/AwAxf/AwAxK3f/f/f/AwAxf/f/AwAxf/f/f/f/f/f/f/f/f/f/AQf/f/f/f/
 BOARD 0 31 64 0 f/f/f/f/f/f/AAABf/AwAxf/f/f/K3f/f/f/f/AwAxAwAxAwAxAwAxf/AwAxAwAxAwAxAwAxf/AwAxAwAxAwAxAwAxf/f/AwAxAAABK3f/OLf/f/f/f/AAABf/f/f/AA
 BOARD 0 32 64 0 f/f/f/f/f/f/f/f/f/AwAxf/f/f/f/f/AwAxf/AwAxAwAxAwAxf/AAABAwAxAwAxAwAxAwAxf/AwAxAwAxAwAxAwAxf/K3AwAxf/f/f/f/f/f/f/f/f/f/f/f/f/f/f/
 BOARD 0 33 64 0 f/AAABf/f/f/f/f/f/AwAxAAABf/AwAxAwAxf/AwAxf/f/f/AwAxf/f/AwAxf/f/f/f/AwAxf/AwAxf/f/f/f/AwAxf/f/AwAxf/f/f/f/f/f/AAABf/f/f/f/f/f/f/
@@ -66,3 +66,201 @@ BOARD 0 63 64 0 FCHVHWFCFC4c4848484848484dFCFCFCFCFCFCFCFCHlHmFCFCFCFCFCFCFCFCFC
 CHEST 20 24 greenrupee 0
 CHEST 24 33 spinattack 0
 CHEST 15 32 fullheart 0
+LINK room0.nw 12 34 1 2 30 30
+LINK sparpit.nw 30 56 4 1 playerx 7
+LINK new16.nw 50 28 2 1 playerx playery
+SIGN 46 14
+Join a game:
+Touch a sign to the left
+to be included in a game.
+Controls:
+Arrow keys move in the direction
+you wish to go.
+Controls:
+Press #k(4) to place a bomb.
+Say "/leave" to exit a game early.
+Items:
+#i(eye_bomber_poni.png,32,0,32,32)Fire - Extends range of blast.
+#i(eye_bomber_poni.png,0,0,32,32)Bomb - Bomb drop increased.
+Items:
+#i(eye_bomber_poni.png,64,0,32,32)Heart - Bomb Protection.
+
+Bomber Coin System:
+    +5~ Win / +1 Lose / +1 Kill
+         -10 for Cheating
+Goal:
+Be the last player left standing
+before the timer hits 0:00!
+SIGNEND
+SIGN 26 43
+#K(32)
+   #u #u #d #d #l #r #l #r B A [Enter]
+SIGNEND
+NPC zold_levelobject_barrel_01.png 24 20
+
+NPCEND
+NPC zold_levelobject_barrel_01.png 25 21
+
+NPCEND
+NPC zold_levelobject_barrel_01.png 26 20
+
+NPCEND
+
+NPC - 30 30
+// Graal2002 NPC by Stefan Knorr
+if (playerenters) {
+  // Initialize the attributes
+  showcharacter;
+  setcharprop #3,head134.png;
+  setcharprop #C0,black;
+  setcharprop #C1,gray;
+  setcharprop #C2,orange;
+  setcharprop #C3,black;
+  setcharprop #C4,black;
+  setcharprop #2,no-shield.png;
+  shieldpower = 1;
+  dir = 3;
+  setcharani dance1,;
+  y=45.5;
+}
+if (washit){
+  message Dingo ate me baby mate!!;
+  setcharprop #C1,orange;
+  setcharprop #C4,orange;
+  sleep 1.5;
+  message;
+}
+NPCEND
+
+
+NPC - 35 31
+// Graal2002 NPC by Stefan Knorr
+if (playerenters) {
+  // Initialize the attributes
+  showcharacter;
+  setcharprop #3,head134.png;
+  setcharprop #C0,black;
+  setcharprop #C1,gray;
+  setcharprop #C2,orange;
+  setcharprop #C3,black;
+  setcharprop #C4,black;
+  setcharprop #2,no-shield.png;
+  shieldpower = 1;
+  dir = 3;
+  setcharani dance1,;
+  y=45.5;
+}
+if (washit){
+  message Dingo ate me baby mate!!;
+  setcharprop #C1,orange;
+  setcharprop #C4,orange;
+  sleep 1.5;
+  message;
+}
+NPCEND
+
+NPC - 35 31
+// Graal2002 NPC by Stefan Knorr
+if (playerenters) {
+  // Initialize the attributes
+  showcharacter;
+  setcharprop #3,head134.png;
+  setcharprop #C0,black;
+  setcharprop #C1,gray;
+  setcharprop #C2,orange;
+  setcharprop #C3,black;
+  setcharprop #C4,black;
+  setcharprop #2,no-shield.png;
+  shieldpower = 1;
+  dir = 3;
+  setcharani dance1,;
+  y=45.5;
+}
+if (washit){
+  message Dingo ate me baby mate!!;
+  setcharprop #C1,orange;
+  setcharprop #C4,orange;
+  sleep 1.5;
+  message;
+}
+NPCEND
+
+NPC - 32 32
+function onCreated() {
+	print("HI!");
+	npc.showcharacter();
+	npc.headimg = 'head1.png';
+	npc.bodyimg = 'body.png';
+	npc.show();
+	npc.ani = 'idle';
+	//npc.setshape(0, 32, 32);
+	npc.warpto("onlinestartlocal.nw", 30,30);
+	npc.message('HI!');
+
+	npc.timeout = 0.5;
+}
+
+let x1 = 0;
+let x2 = 63;
+let y1 = 0;
+let y2 = 63;
+let speed = 0.3;
+let mode = 0;
+let runcounter = 40;
+let walkmode = 0;
+
+function onPlayerEnters(player) {
+  // Initialize the this. variables
+  npc.timeout = 0.05;
+  walkmode = 1;
+  //if (wasthrown && walkmode>1) walkmode = 1;
+
+  npc.ani = 'idle';
+}
+
+function vecx(dir) {
+	return Math.cos(((Math.PI / 2) * dir+1));
+}
+
+function vecy(dir) {
+	return Math.sin(((Math.PI / 2) * dir+1));
+}
+
+function random(min, max) {
+ 	return Math.floor(Math.random() * (max - min) ) + min;
+}
+
+// Walking stuff
+function onTimeout () {
+	// WALKING
+	npc.ani = 'walk';
+	let newx = npc.x + vecx(npc.dir)*speed;
+	let newy = npc.y - vecy(npc.dir)*speed;
+	runcounter--;
+	if (walkmode==1) { // RANDOM
+		if ( runcounter > 0 ) {
+			let testx = newx + 1.5 + vecx(npc.dir);
+			let testy = newy - 2 + vecy(npc.dir);
+
+			if (npc.level.onwall(testx,testy)) {
+				npc.dir = (npc.dir+2)%4;
+				runcounter = random(0,60);
+			} else {
+
+				npc.x = newx;
+				npc.y = newy;
+			}
+		} else {
+			runcounter = random(10,40);
+			npc.dir = ((npc.dir+1+random(0,2)*2)%4);
+		}
+	}
+
+	if (walkmode > 1 && runcounter <= 0)
+		runcounter = 20;
+
+	npc.message('players: ' + server.players.length + server.players[random(0,1)].account);
+	npc.timeout = 0.05;
+}
+
+NPCEND

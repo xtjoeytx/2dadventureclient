@@ -12,6 +12,9 @@
 #include "TLevelItem.h"
 #include "TLevelLink.h"
 #include "TLevelSign.h"
+#ifdef V8NPCSERVER
+#include "ScriptWrapped.h"
+#endif
 
 class TClient;
 class TPlayer;

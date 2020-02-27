@@ -276,6 +276,7 @@ void TPlayer::createFunctions()
 
 	// NPC-Server Functions
 #ifdef V8NPCSERVER
+/*
 	TPLFunc[PLI_NC_NPCGET] = &TPlayer::msgPLI_NC_NPCGET;
 	TPLFunc[PLI_NC_NPCDELETE] = &TPlayer::msgPLI_NC_NPCDELETE;
 	TPLFunc[PLI_NC_NPCRESET] = &TPlayer::msgPLI_NC_NPCRESET;
@@ -294,6 +295,7 @@ void TPlayer::createFunctions()
 	TPLFunc[PLI_NC_WEAPONDELETE] = &TPlayer::msgPLI_NC_WEAPONDELETE;
 	TPLFunc[PLI_NC_CLASSDELETE] = &TPlayer::msgPLI_NC_CLASSDELETE;
 	TPLFunc[PLI_NC_LEVELLISTGET] = &TPlayer::msgPLI_NC_LEVELLISTGET;
+	*/
 #endif
 
 	// Finished
@@ -762,8 +764,8 @@ bool TPlayer::sendFile(const CString& pFile)
 
 	// Strip filename from the path.
 	path.removeI(path.findl(CFileSystem::getPathSeparator()) + 1);
-	if (path.find(server->getServerPath()) != -1)
-		path.removeI(0, server->getServerPath().length());
+	if ( path.find(server->getRunnerPath()) != -1)
+		path.removeI(0, server->getRunnerPath().length());
 
 	// Send the file now.
 	return this->sendFile(path, pFile);
@@ -771,7 +773,7 @@ bool TPlayer::sendFile(const CString& pFile)
 
 bool TPlayer::sendFile(const CString& pPath, const CString& pFile)
 {
-	CString filepath = CString() << server->getServerPath() << pPath << pFile;
+	CString filepath = CString() << server->getRunnerPath() << pPath << pFile;
 	CString fileData;
 	fileData.load(filepath);
 
@@ -1336,7 +1338,7 @@ bool TPlayer::processChat(CString pChat)
 				setChat(CString() << "Don't move for 30 seconds before doing '" << pChat << "'!");
 		}
 	}
-	else if (pChat == "update level" && hasRight(PLPERM_UPDATELEVEL))
+	else if ((pChat == "update level" || pChat == ".ul") && (hasRight(PLPERM_UPDATELEVEL) || isLocalPlayer))
 	{
 		processed = true;
 		level->reload();
@@ -3374,7 +3376,7 @@ bool TPlayer::msgPLI_TRIGGERACTION(CString& pPacket)
 						guildList << account;
 						if (!nick.isEmpty()) guildList << ":" << nick;
 
-						guildList.save(CString() << server->getServerPath() << "guilds/guild" << guild << ".txt");
+						guildList.save(CString() << server->getRunnerPath() << "guilds/guild" << guild << ".txt");
 					}
 				}
 				return true;
@@ -3401,7 +3403,7 @@ bool TPlayer::msgPLI_TRIGGERACTION(CString& pPacket)
 						else ++length;
 
 						guildList.removeI(pos, length);
-						guildList.save(CString() << server->getServerPath() << "guilds/guild" << guild << ".txt");
+						guildList.save(CString() << server->getRunnerPath() << "guilds/guild" << guild << ".txt");
 					}
 				}
 				return true;
@@ -3509,11 +3511,11 @@ bool TPlayer::msgPLI_TRIGGERACTION(CString& pPacket)
 
 				// Load the file.
 				CString file;
-				file.load(server->getServerPath() << "logs/" << filename);
+				file.load(server->getRunnerPath() << "logs/" << filename);
 
 				// Save the file.
 				file << action.subString(finish) << "\r\n";
-				file.save(server->getServerPath() << "logs/" << filename);
+				file.save(server->getRunnerPath() << "logs/" << filename);
 				return true;
 			}
 			else if (action.find("gr.writefile") == 0)
@@ -3530,7 +3532,7 @@ bool TPlayer::msgPLI_TRIGGERACTION(CString& pPacket)
 
 				// Save the file.
 				CString file = action.subString(finish) << "\r\n";
-				file.save(server->getServerPath() << "logs/" << filename);
+				file.save(server->getRunnerPath() << "logs/" << filename);
 				return true;
 			}
 			else if (action.find("gr.readfile") == 0)
@@ -3547,7 +3549,7 @@ bool TPlayer::msgPLI_TRIGGERACTION(CString& pPacket)
 
 				// Load the file.
 				CString filedata;
-				filedata.load(server->getServerPath() << "logs/" << filename);
+				filedata.load(server->getRunnerPath() << "logs/" << filename);
 				filedata.removeAllI("\r");
 
 				// Tokenize it.
@@ -3849,7 +3851,7 @@ bool TPlayer::msgPLI_UPDATECLASS(CString& pPacket)
 	time_t modTime = pPacket.readGUInt5();
 	CString fname = pPacket.readString("");
 	CString bytecode, out;
-	bytecode.load(server->getServerPath() << "class_bytecode/" << fname << ".txt");
+	bytecode.load(server->getRunnerPath() << "class_bytecode/" << fname << ".txt");
 	printf("UPDATECLASS: %s\n", fname.text());
 	if (!bytecode.isEmpty())
 	{

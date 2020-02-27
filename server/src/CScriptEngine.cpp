@@ -3,7 +3,7 @@
 #include "CScriptEngine.h"
 #include "TNPC.h"
 #include "TPlayer.h"
-#include "TServer.h"
+#include "CRunnerStub.h"
 #include "TWeapon.h"
 
 extern void bindGlobalFunctions(CScriptEngine *scriptEngine);
@@ -14,8 +14,8 @@ extern void bindClass_Player(CScriptEngine *scriptEngine);
 extern void bindClass_Server(CScriptEngine *scriptEngine);
 extern void bindClass_Weapon(CScriptEngine *scriptEngine);
 
-CScriptEngine::CScriptEngine(TServer *server)
-	: _server(server), _env(nullptr), _bootstrapFunction(nullptr), _environmentObject(nullptr), _serverObject(nullptr)
+CScriptEngine::CScriptEngine(CRunnerStub *runner)
+	: _runner(runner), _env(nullptr), _bootstrapFunction(nullptr), _environmentObject(nullptr), _runnerObject(nullptr)
 	, _scriptIsRunning(false), _scriptWatcherRunning(false), _scriptWatcherThread()
 {
 
@@ -32,7 +32,7 @@ bool CScriptEngine::Initialize()
 		return true;
 
 	CString bootstrapScript;
-	if (!bootstrapScript.load(CString() << _server->getServerPath() << "bootstrap.js"))
+	if (!bootstrapScript.load(CString() << _runner->getRunnerPath() << "bootstrap.js"))
 	{
 		// Failed to load file
 		return false;
@@ -64,9 +64,9 @@ bool CScriptEngine::Initialize()
 	_bootstrapFunction = _env->Compile("bootstrap", bootstrapScript.text());
 	assert(_bootstrapFunction);
 
-	// Bind the server into two separate objects
-	_environmentObject = ScriptFactory::WrapObject(_env, "environment", _server);
-	_serverObject = ScriptFactory::WrapObject(_env, "server", _server);
+	// Bind the runner into two separate objects
+	_environmentObject = ScriptFactory::WrapObject(_env, "environment", _runner);
+	_runnerObject = ScriptFactory::WrapObject(_env, "server", _runner);
 
 	// Execute the bootstrap function
 	_env->CallFunctionInScope([&]() -> void {
@@ -147,9 +147,9 @@ void CScriptEngine::Cleanup(bool shutDown)
 		_environmentObject = nullptr;
 	}
 
-	if (_serverObject) {
-		delete _serverObject;
-		_serverObject = nullptr;
+	if (_runnerObject) {
+		delete _runnerObject;
+		_runnerObject = nullptr;
 	}
 
 	// Cleanup the Script Environment
@@ -171,14 +171,14 @@ IScriptFunction * CScriptEngine::CompileCache(const std::string& code, bool refe
 		return scriptFunctionIter->second;
 	}
 
-	// Compile script, send errors to server
+	// Compile script, send errors to runner
 	SCRIPTENV_D("Compiling script:\n---\n%s\n---\n", code.c_str());
 
 	IScriptFunction *compiledScript = _env->Compile(std::to_string(SCRIPT_ID++), code);
 	if (compiledScript == nullptr)
 	{
 		auto scriptError = _env->getScriptError();
-		_server->reportScriptException(scriptError);
+		_runner->reportScriptException(scriptError);
 		SCRIPTENV_D("Error Compiling: %s\n", scriptError.getErrorString().c_str());
 		return nullptr;
 	}
@@ -238,7 +238,7 @@ bool CScriptEngine::ExecuteNpc(TNPC *npc)
 		IScriptArguments *args = ScriptFactory::CreateArguments(_env, wrappedObject);
 		bool result = args->Invoke(compiledScript, true);
 		if (!result)
-			_server->reportScriptException(_env->getScriptError());
+			_runner->reportScriptException(_env->getScriptError());
 		delete args;
 	});
 
@@ -275,7 +275,7 @@ bool CScriptEngine::ExecuteWeapon(TWeapon *weapon)
 		IScriptArguments *args = ScriptFactory::CreateArguments(_env, wrappedObject);
 		bool result = args->Invoke(compiledScript, true);
 		if (!result)
-			_server->reportScriptException(_env->getScriptError());
+			_runner->reportScriptException(_env->getScriptError());
 		delete args;
 	});
 

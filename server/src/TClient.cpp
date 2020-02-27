@@ -54,8 +54,8 @@ TClient::TClient(CString pName)
 	atexit(SDL_Quit);
 
 	// This has the full path to the server directory.
-	serverPath = CString() << getHomePath() << "data/"; // << "servers/" << name << "/";
-	CFileSystem::fixPathSeparators(&serverPath);
+	runnerPath = CString() << getHomePath() << "data/"; // << "servers/" << name << "/";
+	CFileSystem::fixPathSeparators(&runnerPath);
 
 	// Set up the log files.
 	CString logPath = CString() << getHomePath();
@@ -668,7 +668,7 @@ void TClient::loadFolderConfig()
 	for (auto & i : filesystem)
 		i.clear();
 
-	foldersConfig = CString::loadToken(CString() << serverPath << "config/foldersconfig.txt", "\n", true);
+	foldersConfig = CString::loadToken(CString() << runnerPath << "config/foldersconfig.txt", "\n", true);
 	for (auto & i : foldersConfig)
 	{
 		// No comments.
@@ -762,7 +762,7 @@ int TClient::loadConfigFiles()
 
 #ifdef V8NPCSERVER
 	// Load database npcs.
-	serverlog.out("Loading npcs...\n");
+	clientLog.out("Loading npcs...\n");
 	loadNpcs(true);
 #endif
 
@@ -780,7 +780,7 @@ int TClient::loadConfigFiles()
 void TClient::loadSettings()
 {
 	settings.setSeparator("=");
-	settings.loadFile(CString() << serverPath << "config/serveroptions.txt");
+	settings.loadFile(CString() << runnerPath << "config/serveroptions.txt");
 	if (!settings.isOpened())
 		clientLog.out("\t** [Error] Could not open config/serveroptions.txt.  Will use default config.\n");
 
@@ -795,7 +795,7 @@ void TClient::loadSettings()
 void TClient::loadAdminSettings()
 {
 	adminsettings.setSeparator("=");
-	adminsettings.loadFile(CString() << serverPath << "config/adminconfig.txt");
+	adminsettings.loadFile(CString() << runnerPath << "config/adminconfig.txt");
 	if (!adminsettings.isOpened())
 		clientLog.out("\t** [Error] Could not open config/adminconfig.txt.  Will use default config.\n");
 #ifndef __AMIGA__
@@ -806,7 +806,7 @@ void TClient::loadAdminSettings()
 void TClient::loadAllowedVersions()
 {
 	CString versions;
-	versions.load(CString() << serverPath << "config/allowedversions.txt");
+	versions.load(CString() << runnerPath << "config/allowedversions.txt");
 	versions = removeComments(versions);
 	versions.removeAllI("\r");
 	versions.removeAllI("\t");
@@ -847,21 +847,21 @@ void TClient::loadFileSystem()
 
 void TClient::loadServerFlags()
 {
-	std::vector<CString> lines = CString::loadToken(CString() << serverPath << "serverflags.txt", "\n", true);
+	std::vector<CString> lines = CString::loadToken(CString() << runnerPath << "serverflags.txt", "\n", true);
 	for (auto & line : lines)
 		this->setFlag(line, false);
 }
 
 void TClient::loadServerMessage()
 {
-	servermessage.load(CString() << serverPath << "config/servermessage.html");
+	servermessage.load(CString() << runnerPath << "config/servermessage.html");
 	servermessage.removeAllI("\r");
 	servermessage.replaceAllI("\n", " ");
 }
 
 void TClient::loadIPBans()
 {
-	ipBans = CString::loadToken(CString() << serverPath << "config/ipbans.txt", "\n", true);
+	ipBans = CString::loadToken(CString() << runnerPath << "config/ipbans.txt", "\n", true);
 }
 
 void TClient::loadClasses(bool print)
@@ -1069,7 +1069,7 @@ void TClient::loadTranslations()
 
 void TClient::loadWordFilter()
 {
-	wordFilter.load(CString() << serverPath << "config/rules.txt");
+	wordFilter.load(CString() << runnerPath << "config/rules.txt");
 }
 
 void TClient::saveServerFlags()
@@ -1077,7 +1077,7 @@ void TClient::saveServerFlags()
 	CString out;
 	for (auto & mServerFlag : mServerFlags)
 		out << mServerFlag.first << "=" << mServerFlag.second << "\r\n";
-	out.save(CString() << serverPath << "serverflags.txt");
+	out.save(CString() << runnerPath << "serverflags.txt");
 }
 
 void TClient::saveWeapons()
@@ -1512,7 +1512,7 @@ bool TClient::deleteNPC(TNPC* npc, bool eraseFromLevel)
 	// If we persist this npc, delete the file  [ maybe should add a parameter if we should remove the npc from disk ]
 	if (npc->getPersist())
 	{
-		CString filePath = getServerPath() << "npcs/npc" << npc->getName() << ".txt";
+		CString filePath = getRunnerPath() << "npcs/npc" << npc->getName() << ".txt";
 		CFileSystem::fixPathSeparators(&filePath);
 		remove(filePath.text());
 	}
@@ -1542,7 +1542,7 @@ bool TClient::deleteClass(const std::string& className)
 		return false;
 
 	classList.erase(classIter);
-	CString filePath = getServerPath() << "scripts/" << className << ".txt";
+	CString filePath = getRunnerPath() << "scripts/" << className << ".txt";
 	CFileSystem::fixPathSeparators(&filePath);
 	remove(filePath.text());
 
@@ -1554,7 +1554,7 @@ void TClient::updateClass(const std::string& className, const std::string& class
 	// TODO(joey): filenames...
 	classList[className] = classCode;
 
-	CString filePath = getServerPath() << "scripts/" << className << ".txt";
+	CString filePath = getRunnerPath() << "scripts/" << className << ".txt";
 	CFileSystem::fixPathSeparators(&filePath);
 
 	CString fileData(classCode);
@@ -1655,7 +1655,7 @@ bool TClient::isIpBanned(const CString& ip)
 
 void TClient::logToFile(const std::string & fileName, const std::string & message)
 {
-	CString fileNamePath = CString() << getServerPath().remove(0, getHomePath().length()) << "logs/";
+	CString fileNamePath = CString() << getRunnerPath().remove(0, getHomePath().length()) << "logs/";
 
 	// Remove leading characters that may try to go up a directory
 	int idx = 0;
@@ -1870,7 +1870,7 @@ bool TClient::NC_DelWeapon(const CString& pWeaponName)
 	name.replaceAllI("*", "@");
 	name.replaceAllI(":", ";");
 	name.replaceAllI("?", "!");
-	CString filePath = getServerPath() << "weapons/weapon" << name << ".txt";
+	CString filePath = getRunnerPath() << "weapons/weapon" << name << ".txt";
 	CFileSystem::fixPathSeparators(&filePath);
 	remove(filePath.text());
 
@@ -2009,7 +2009,7 @@ void TClient::TS_Save()
 		}
 
 		// Save File
-		output.trimRight().save(getServerPath() << "translations/" << i->first.c_str() << ".po");
+		output.trimRight().save(getRunnerPath() << "translations/" << i->first.c_str() << ".po");
 	}
 }
 

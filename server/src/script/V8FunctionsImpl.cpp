@@ -27,14 +27,14 @@ void Global_Function_Print(const v8::FunctionCallbackInfo<v8::Value>& args)
 	fflush(stdout);
 }
 
-// PROPERTY: server object
+// PROPERTY: runner object
 void Global_GetObject_Server(v8::Local<v8::String> prop, const v8::PropertyCallbackInfo<v8::Value>& info)
 {
     v8::Local<v8::External> data = info.Data().As<v8::External>();
     CScriptEngine *scriptEngine = static_cast<CScriptEngine *>(data->Value());
 
-    V8ScriptWrapped<TServer> *v8_serverObject = static_cast<V8ScriptWrapped<TServer> *>(scriptEngine->getServerObject());
-    info.GetReturnValue().Set(v8_serverObject->Handle(info.GetIsolate()));
+    V8ScriptWrapped<CRunnerStub> *v8_runnerObject = static_cast<V8ScriptWrapped<CRunnerStub> *>(scriptEngine->getRunnerObject());
+    info.GetReturnValue().Set(v8_runnerObject->Handle(info.GetIsolate()));
 }
 
 void bindGlobalFunctions(CScriptEngine *scriptEngine)
@@ -45,7 +45,7 @@ void bindGlobalFunctions(CScriptEngine *scriptEngine)
 
 	// External pointer
 	v8::Local<v8::External> engine_ref = v8::External::New(isolate, scriptEngine);
-	
+
 	// Fetch global template
 	v8::Local<v8::ObjectTemplate> global = env->GlobalTemplate();
 

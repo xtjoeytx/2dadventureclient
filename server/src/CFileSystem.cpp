@@ -74,7 +74,7 @@ void CFileSystem::addDir(const CString& dir, const CString& wildcard, bool force
 	}
 
 	// Add the directory to the directory list.
-	CString ndir = CString() << server->getServerPath() << newDir << wildcard;
+	CString ndir = CString() << server->getRunnerPath() << newDir << wildcard;
 	if (vecSearch<CString>(dirList, ndir) != -1)	// Already exists?  Resync.
 		resync();
 	else
@@ -97,11 +97,11 @@ void CFileSystem::addFile(CString file)
 	CString directory(file.subString(0, file.find(filename)));
 
 	// Fix directory path separators.
-	if (directory.find(server->getServerPath()) != -1)
-		directory.removeI(0, server->getServerPath().length());
+	if ( directory.find(server->getRunnerPath()) != -1)
+		directory.removeI(0, server->getRunnerPath().length());
 
 	// Add to the map.
-	fileList[filename] = CString() << server->getServerPath() << directory << filename;
+	fileList[filename] = CString() << server->getRunnerPath() << directory << filename;
 }
 
 void CFileSystem::removeFile(const CString& file)
@@ -220,7 +220,7 @@ void CFileSystem::loadAllDirectories(const CString& directory, bool recursive)
 				{
 					// We need to add the directory to the directory list.
 					CString newDir = CString() << path << ent->d_name << fSep;
-					newDir.removeI(0, server->getServerPath().length());
+					newDir.removeI(0, server->getRunnerPath().length());
 					addDir(newDir, "*", true);
 				}
 				continue;

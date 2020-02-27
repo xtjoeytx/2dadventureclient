@@ -7,7 +7,7 @@
 #include "CScriptEngine.h"
 #include "TLevel.h"
 #include "TPlayer.h"
-#include "TServer.h"
+#include "CRunnerStub.h"
 
 #include "V8ScriptFunction.h"
 #include "V8ScriptWrapped.h"
@@ -16,7 +16,7 @@
 void Player_GetInt_Id(v8::Local<v8::String> prop, const v8::PropertyCallbackInfo<v8::Value>& info)
 {
 	V8ENV_SAFE_UNWRAP(info, TPlayer, playerObject);
-	
+
 	info.GetReturnValue().Set(playerObject->getId());
 }
 
@@ -37,7 +37,7 @@ void Player_GetStr_Ani(v8::Local<v8::String> prop, const v8::PropertyCallbackInf
 	V8ENV_SAFE_UNWRAP(info, TPlayer, playerObject);
 
 	const CString& animation = playerObject->getAnimation();
-	
+
 	v8::Local<v8::String> strText = v8::String::NewFromUtf8(info.GetIsolate(), animation.text());
 	info.GetReturnValue().Set(strText);
 }
@@ -205,7 +205,7 @@ void Player_SetStr_Guild(v8::Local<v8::String> props, v8::Local<v8::Value> value
 	V8ENV_SAFE_UNWRAP(info, TPlayer, playerObject);
 
 	v8::String::Utf8Value newValue = v8::String::Utf8Value(info.GetIsolate(), value);
-	
+
 	CString playerNick = playerObject->getNickname();
 	int pos = playerNick.find("(", 0);
 	if (pos != -1)
@@ -270,7 +270,7 @@ void Player_SetStr_HeadImage(v8::Local<v8::String> props, v8::Local<v8::Value> v
 void Player_GetBool_IsAdmin(v8::Local<v8::String> prop, const v8::PropertyCallbackInfo<v8::Value>& info)
 {
 	V8ENV_SAFE_UNWRAP(info, TPlayer, playerObject);
-	
+
 	info.GetReturnValue().Set((playerObject->getType() & PLTYPE_ANYRC) != 0);
 }
 
@@ -278,7 +278,7 @@ void Player_GetBool_IsAdmin(v8::Local<v8::String> prop, const v8::PropertyCallba
 void Player_GetBool_IsClient(v8::Local<v8::String> prop, const v8::PropertyCallbackInfo<v8::Value>& info)
 {
 	V8ENV_SAFE_UNWRAP(info, TPlayer, playerObject);
-	
+
 	info.GetReturnValue().Set((playerObject->getType() & PLTYPE_ANYCLIENT) != 0);
 }
 
@@ -286,7 +286,7 @@ void Player_GetBool_IsClient(v8::Local<v8::String> prop, const v8::PropertyCallb
 void Player_GetObject_Level(v8::Local<v8::String> prop, const v8::PropertyCallbackInfo<v8::Value>& info)
 {
 	V8ENV_SAFE_UNWRAP(info, TPlayer, playerObject);
-	
+
 	TLevel *levelObject = playerObject->getLevel();
 
 	if (levelObject != 0)
@@ -303,7 +303,7 @@ void Player_GetObject_Level(v8::Local<v8::String> prop, const v8::PropertyCallba
 void Player_GetStr_LevelName(v8::Local<v8::String> prop, const v8::PropertyCallbackInfo<v8::Value>& info)
 {
 	V8ENV_SAFE_UNWRAP(info, TPlayer, playerObject);
-	
+
 	TLevel *levelObject = playerObject->getLevel();
 
 	CString levelName;
@@ -621,7 +621,7 @@ void Player_GetObject_Flags(v8::Local<v8::String> prop, const v8::PropertyCallba
 	v8::Isolate *isolate = info.GetIsolate();
 	v8::Local<v8::Context> context = isolate->GetCurrentContext();
 	v8::Local<v8::Object> self = info.This();
-	
+
 	v8::Local<v8::String> internalFlags = v8::String::NewFromUtf8(isolate, "_internalFlags", v8::NewStringType::kInternalized).ToLocalChecked();
 	if (self->HasRealNamedProperty(context, internalFlags).ToChecked())
 	{
@@ -656,9 +656,9 @@ void Player_GetObject_Flags(v8::Local<v8::String> prop, const v8::PropertyCallba
 void Player_Flags_Getter(v8::Local<v8::Name> property, const v8::PropertyCallbackInfo<v8::Value>& info)
 {
 	V8ENV_SAFE_UNWRAP(info, TPlayer, playerObject);
-	
+
 	v8::Isolate *isolate = info.GetIsolate();
-	
+
 	// TODO(joey): playerObject is not getting unset here.
 
 	// Get property name
@@ -674,9 +674,9 @@ void Player_Flags_Getter(v8::Local<v8::Name> property, const v8::PropertyCallbac
 void Player_Flags_Setter(v8::Local<v8::Name> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<v8::Value>& info)
 {
 	V8ENV_SAFE_UNWRAP(info, TPlayer, playerObject);
-	
+
 	v8::Isolate *isolate = info.GetIsolate();
-	
+
 	// Get property name
 	v8::Local<v8::String> name = v8::Local<v8::String>::Cast(property);
 	v8::String::Utf8Value utf8(isolate, name);
@@ -692,10 +692,10 @@ void Player_Flags_Setter(v8::Local<v8::Name> property, v8::Local<v8::Value> valu
 void Player_Flags_Enumerator(const v8::PropertyCallbackInfo<v8::Array>& info)
 {
 	V8ENV_SAFE_UNWRAP(info, TPlayer, playerObject);
-	
+
 	v8::Isolate *isolate = info.GetIsolate();
 	v8::Local<v8::Context> context = isolate->GetCurrentContext();
-	
+
 	// Get flags list
 	auto flagList = playerObject->getFlagList();
 
@@ -714,7 +714,7 @@ void Player_GetArray_Weapons(v8::Local<v8::String> prop, const v8::PropertyCallb
 
 	v8::Isolate *isolate = info.GetIsolate();
 	v8::Local<v8::Context> context = isolate->GetCurrentContext();
-	
+
 	// Get npcs list
 	auto weaponList = playerObject->getWeaponList();
 
@@ -744,7 +744,7 @@ void Player_Function_AddWeapon(const v8::FunctionCallbackInfo<v8::Value>& args)
 	if (args[0]->IsString())
 	{
 		V8ENV_SAFE_UNWRAP(args, TPlayer, playerObject);
-		
+
 		v8::String::Utf8Value newValue(isolate, args[0]->ToString(isolate));
 
 		bool result = playerObject->addWeapon(*newValue);
@@ -790,7 +790,7 @@ void Player_Function_RemoveWeapon(const v8::FunctionCallbackInfo<v8::Value>& arg
 	if (args[0]->IsString())
 	{
 		V8ENV_SAFE_UNWRAP(args, TPlayer, playerObject);
-		
+
 		v8::String::Utf8Value newValue(isolate, args[0]->ToString(isolate));
 
 		bool result = playerObject->deleteWeapon(*newValue);
@@ -808,7 +808,7 @@ void Player_Function_DisableWeapons(const v8::FunctionCallbackInfo<v8::Value>& a
 
 	V8ENV_THROW_CONSTRUCTOR(args, isolate);
 	V8ENV_SAFE_UNWRAP(args, TPlayer, playerObject);
-	
+
 	playerObject->disableWeapons();
 }
 
@@ -819,7 +819,7 @@ void Player_Function_EnableWeapons(const v8::FunctionCallbackInfo<v8::Value>& ar
 
 	V8ENV_THROW_CONSTRUCTOR(args, isolate);
 	V8ENV_SAFE_UNWRAP(args, TPlayer, playerObject);
-	
+
 	playerObject->enableWeapons();
 }
 
@@ -859,10 +859,10 @@ void Player_Function_SendPM(const v8::FunctionCallbackInfo<v8::Value>& args)
 		// Get server
 		v8::Local<v8::External> data = args.Data().As<v8::External>();
 		CScriptEngine *scriptEngine = static_cast<CScriptEngine *>(data->Value());
-		TServer *server = scriptEngine->getServer();
+		CRunnerStub *runner = scriptEngine->getRunner();
 
 		// Get npc-server
-		TPlayer *npcServer = server->getNPCServer();
+		TPlayer *npcServer = runner->getNPCServer();
 		assert(npcServer);
 
 		// Parse argument
@@ -904,9 +904,9 @@ void Player_Function_SetLevel2(const v8::FunctionCallbackInfo<v8::Value>& args)
 	if (args[0]->IsString() && args[1]->IsNumber() && args[2]->IsNumber())
 	{
 		V8ENV_SAFE_UNWRAP(args, TPlayer, playerObject);
-		
+
 		v8::Local<v8::Context> context = isolate->GetCurrentContext();
-		
+
 		v8::String::Utf8Value levelName(isolate, args[0]->ToString(isolate));
 		double newX = args[1]->NumberValue(context).ToChecked();
 		double newY = args[2]->NumberValue(context).ToChecked();
@@ -935,7 +935,7 @@ void Player_Function_Join(const v8::FunctionCallbackInfo<v8::Value>& args)
 
 		std::string className = *v8::String::Utf8Value(isolate, args[0]->ToString(context).ToLocalChecked());
 
-		TServer *server = scriptEngine->getServer();
+		CRunnerStub *server = scriptEngine->getRunner();
 		std::string classCode = server->getClass(className);
 
 		if (!classCode.empty())
@@ -977,14 +977,14 @@ void Player_Function_TriggerAction(const v8::FunctionCallbackInfo<v8::Value>& ar
 		v8::Local<v8::Context> context = isolate->GetCurrentContext();
 		char trigx = (char)(args[0]->NumberValue(context).ToChecked() * 2);
 		char trigy = (char)(args[1]->NumberValue(context).ToChecked() * 2);
-		
+
 		CString trigaction = *v8::String::Utf8Value(isolate, args[2]->ToString(context).ToLocalChecked());
 		for (int i = 3; i < args.Length(); i++)
 			trigaction << "," << *v8::String::Utf8Value(isolate, args[i]->ToString(context).ToLocalChecked());
 
 		// Unwrap Object
 		V8ENV_SAFE_UNWRAP(args, TPlayer, playerObject);
-		
+
 		playerObject->sendPacket(CString() >> (char)PLO_TRIGGERACTION >> (short)0 >> (int)0 >> (char)trigx >> (char)trigy << trigaction);
 	}
 }
@@ -1000,7 +1000,7 @@ void bindClass_Player(CScriptEngine *scriptEngine)
 
 	// Create V8 string for "player"
 	v8::Local<v8::String> className = v8::String::NewFromUtf8(isolate, "player", v8::NewStringType::kInternalized).ToLocalChecked();
-	
+
 	// Create constructor for class
 	v8::Local<v8::FunctionTemplate> player_ctor = v8::FunctionTemplate::New(isolate, nullptr, engine_ref); // , Player_Constructor);
 	v8::Local<v8::ObjectTemplate> player_proto = player_ctor->PrototypeTemplate();

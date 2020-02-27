@@ -20,7 +20,7 @@ void Server_Function_FindLevel(const v8::FunctionCallbackInfo<v8::Value>& args)
 	V8ENV_THROW_ARGCOUNT(args, isolate, 1);
 
 	v8::Local<v8::Context> context = args.GetIsolate()->GetCurrentContext();
-	TServer *serverObject = UnwrapObject<TServer>(args.This());
+	CRunnerStub *serverObject = UnwrapObject<CRunnerStub>(args.This());
 
 	// Find level from user input
 	if (args[0]->IsString())
@@ -44,8 +44,8 @@ void Server_Function_FindNPC(const v8::FunctionCallbackInfo<v8::Value>& args)
 	V8ENV_THROW_ARGCOUNT(args, isolate, 1);
 
 	v8::Local<v8::Context> context = args.GetIsolate()->GetCurrentContext();
-	TServer *serverObject = UnwrapObject<TServer>(args.This());
-	
+	CRunnerStub *serverObject = UnwrapObject<CRunnerStub>(args.This());
+
 	// Find npc object from user input
 	TNPC *npcObject = nullptr;
 	if (args[0]->IsString())
@@ -77,7 +77,7 @@ void Server_Function_FindPlayer(const v8::FunctionCallbackInfo<v8::Value>& args)
 	// TODO(joey): second parameter could indicticate if it should skip rcs?
 
 	v8::Local<v8::Context> context = args.GetIsolate()->GetCurrentContext();
-	TServer *serverObject = UnwrapObject<TServer>(args.This());
+	CRunnerStub *serverObject = UnwrapObject<CRunnerStub>(args.This());
 
 	// Find player object from user input
 	TPlayer *playerObject = nullptr;
@@ -109,7 +109,7 @@ void Server_Function_SaveLog(const v8::FunctionCallbackInfo<v8::Value>& args)
 
 	if (args[0]->IsString() && args[1]->IsString())
 	{
-		V8ENV_SAFE_UNWRAP(args, TServer, serverObject);
+		V8ENV_SAFE_UNWRAP(args, CRunnerStub, serverObject);
 
 		v8::Local<v8::Context> context = args.GetIsolate()->GetCurrentContext();
 		v8::String::Utf8Value filename(isolate, args[0]->ToString(context).ToLocalChecked());
@@ -128,7 +128,7 @@ void Server_Function_SendToNC(const v8::FunctionCallbackInfo<v8::Value>& args)
 
 	if (args[0]->IsString())
 	{
-		V8ENV_SAFE_UNWRAP(args, TServer, serverObject);
+		V8ENV_SAFE_UNWRAP(args, CRunnerStub, serverObject);
 
 		v8::Local<v8::Context> context = args.GetIsolate()->GetCurrentContext();
 		v8::String::Utf8Value message(isolate, args[0]->ToString(context).ToLocalChecked());
@@ -146,7 +146,7 @@ void Server_Function_SendToRC(const v8::FunctionCallbackInfo<v8::Value>& args)
 
 	if (args[0]->IsString())
 	{
-		V8ENV_SAFE_UNWRAP(args, TServer, serverObject);
+		V8ENV_SAFE_UNWRAP(args, CRunnerStub, serverObject);
 
 		v8::Local<v8::Context> context = args.GetIsolate()->GetCurrentContext();
 		v8::String::Utf8Value message(isolate, args[0]->ToString(context).ToLocalChecked());
@@ -158,8 +158,8 @@ void Server_Function_SendToRC(const v8::FunctionCallbackInfo<v8::Value>& args)
 // PROPERTY: server.timevar
 void Server_Get_TimeVar(v8::Local<v8::String> prop, const v8::PropertyCallbackInfo<v8::Value>& info)
 {
-	V8ENV_SAFE_UNWRAP(info, TServer, serverObject);
-	
+	V8ENV_SAFE_UNWRAP(info, CRunnerStub, serverObject);
+
 	unsigned int timevar = serverObject->getNWTime();
 	info.GetReturnValue().Set(timevar);
 }
@@ -185,7 +185,7 @@ void Server_GetObject_Flags(v8::Local<v8::String> prop, const v8::PropertyCallba
         return;
     }
 
-	V8ENV_SAFE_UNWRAP(info, TServer, serverObject);
+	V8ENV_SAFE_UNWRAP(info, CRunnerStub, serverObject);
 
 	// Grab external data
 	v8::Local<v8::External> data = info.Data().As<v8::External>();
@@ -209,7 +209,7 @@ void Server_Flags_Getter(v8::Local<v8::Name> property, const v8::PropertyCallbac
 {
 	v8::Isolate *isolate = info.GetIsolate();
 	v8::Local<v8::Object> self = info.This();
-	TServer *serverObject = UnwrapObject<TServer>(self);
+	CRunnerStub *serverObject = UnwrapObject<CRunnerStub>(self);
 
 	// Get property name
     v8::Local<v8::String> name = v8::Local<v8::String>::Cast(property);
@@ -225,7 +225,7 @@ void Server_Flags_Setter(v8::Local<v8::Name> property, v8::Local<v8::Value> valu
 {
 	v8::Isolate *isolate = info.GetIsolate();
 	v8::Local<v8::Object> self = info.This();
-	TServer *serverObject = UnwrapObject<TServer>(self);
+	CRunnerStub *serverObject = UnwrapObject<CRunnerStub>(self);
 
 	// Get property name
 	v8::Local<v8::String> name = v8::Local<v8::String>::Cast(property);
@@ -241,10 +241,10 @@ void Server_Flags_Enumerator(const v8::PropertyCallbackInfo<v8::Array>& info)
 	v8::Isolate *isolate = info.GetIsolate();
 	v8::Local<v8::Context> context = isolate->GetCurrentContext();
 	v8::Local<v8::Object> self = info.This();
-	TServer *serverObject = UnwrapObject<TServer>(self);
+	CRunnerStub *runnerObject = UnwrapObject<CRunnerStub>(self);
 
 	// Get flags list
-	auto flagList = serverObject->getServerFlags();
+	auto flagList = runnerObject->getServerFlags();
 
 	v8::Local<v8::Array> result = v8::Array::New(isolate, (int)flagList->size());
 
@@ -261,10 +261,10 @@ void Server_GetArray_Npcs(v8::Local<v8::String> prop, const v8::PropertyCallback
 	v8::Isolate *isolate = info.GetIsolate();
 	v8::Local<v8::Context> context = isolate->GetCurrentContext();
 	v8::Local<v8::Object> self = info.This();
-	TServer *serverObject = UnwrapObject<TServer>(self);
+	CRunnerStub *runnerObject = UnwrapObject<CRunnerStub>(self);
 
 	// Get npcs list
-	auto npcList = serverObject->getNPCList();
+	auto npcList = runnerObject->getNPCList();
 
 	v8::Local<v8::Array> result = v8::Array::New(isolate, (int)npcList->size());
 
@@ -283,14 +283,14 @@ void Server_GetArray_Players(v8::Local<v8::String> prop, const v8::PropertyCallb
 	v8::Isolate *isolate = info.GetIsolate();
 	v8::Local<v8::Context> context = isolate->GetCurrentContext();
 	v8::Local<v8::Object> self = info.This();
-	TServer *serverObject = UnwrapObject<TServer>(self);
+	CRunnerStub *runnerObject = UnwrapObject<CRunnerStub>(self);
 
 	// Get npcs list
-	auto playerList = serverObject->getPlayerList();
+	auto playerList = runnerObject->getPlayerList();
 
 	// TODO(joey): Since we are skipping npc-server, length may be off?
 	v8::Local<v8::Array> result = v8::Array::New(isolate, (int)playerList->size());
-	
+
 	int idx = 0;
 	for (auto it = playerList->begin(); it != playerList->end(); ++it) {
 		TPlayer *pl = *it;

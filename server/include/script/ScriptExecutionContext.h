@@ -6,9 +6,10 @@
 #include <algorithm>
 #include <chrono>
 #include <vector>
+#include <CScriptEngine.h>
 #include "ScriptAction.h"
 #include "ScriptUtils.h"
-#include "CScriptEngine.h"
+
 
 class ScriptAction;
 
@@ -22,7 +23,7 @@ public:
 
 	bool hasActions() const;
 	std::pair<unsigned int, double> getExecutionData();
-	
+
 	void addAction(ScriptAction *action);
 	void addExecutionSample(const ScriptTimeSample& sample);
 	void resetExecution();
@@ -99,9 +100,8 @@ inline bool ScriptExecutionContext::runExecution()
 	_scriptEngine->StartScriptExecution(currentTimer);
 
 	// iterate over queued actions
-	for (auto it = iterateActions.begin(); it != iterateActions.end(); it++)
+	for (auto action : iterateActions)
 	{
-		ScriptAction *action = *it;
 		SCRIPTENV_D("Running action: %s\n", action->getAction().c_str());
 		action->Invoke();
 		delete action;

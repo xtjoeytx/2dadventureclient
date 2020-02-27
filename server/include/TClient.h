@@ -40,7 +40,8 @@ class TNPC;
 class TMap;
 class TWeapon;
 class TGameWindow;
-using namespace std;
+class TImage;
+
 #ifndef __AMIGA__
 extern std::atomic_bool shutdownProgram;
 #else
@@ -65,11 +66,9 @@ enum
 };
 #define FS_COUNT	7
 
-class TImage;
-
-class TClient
+class TClient : public CRunnerStub
 #ifndef __AMIGA__
-		: public CSocketStub
+		 , CSocketStub
 #endif
 {
 	public:
@@ -90,9 +89,9 @@ class TClient
 
 		TClient(CString pName);
 		~TClient();
-		void operator()();
-		void cleanup();
-		void restart();
+		void operator()() override;
+		void cleanup() override;
+		void restart() override;
 		bool running;
 
 		int init(
@@ -148,7 +147,7 @@ class TClient
 #ifndef __AMIGA__
 		CSocketManager* getSocketManager()				{ return &sockManager; }
 #endif
-		CString getServerPath()							{ return serverPath; }
+		CString getRunnerPath()							{ return runnerPath; }
 		CString* getServerMessage()						{ return &servermessage; }
 		CString* getAllowedVersionString()				{ return &allowedVersionString; }
 		CTranslationManager* getTranslationManager()	{ return &mTranslationManager; }
@@ -259,7 +258,7 @@ class TClient
 		CSocket playerSock;
 		CSocketManager sockManager;
 #endif
-		CString allowedVersionString, name, servermessage, serverPath;
+		CString allowedVersionString, name, servermessage, runnerPath;
 		CTranslationManager mTranslationManager;
 		CWordFilter wordFilter;
 		CString overrideIP, overrideLocalIP, overridePort, overrideInterface;

@@ -188,7 +188,7 @@ class TAccount : public CAnimationObjectStub
 		const CString& getShieldImage() const	{ return shieldImg; }
 		const CString& getSwordImage() const	{ return swordImg; }
 		const CString& getAnimation() const		{ return gani; }
-		const CString& getImage() const			{ return image; }
+
 		const CString& getAdminIp() const		{ return adminIp; }
 		const CString& getBanReason() const		{ return banReason; }
 		const CString& getBanLength() const		{ return banLength; }
@@ -199,6 +199,11 @@ class TAccount : public CAnimationObjectStub
 		std::unordered_map<std::string, CString> * getFlagList()	{ return &flagList; }
 		std::vector<CString> * getFolderList()						{ return &folderList; }
 		std::vector<CString> * getWeaponList()						{ return &weaponList; }
+
+		// Rendering stuff
+		const CString& getImage() const			{ return image; }
+		int getWidth() const override 			{ return 0; }
+		int getHeight() const override 			{ return 0; }
 
 		// set functions
 		void setLastSparTime(time_t newTime)		{ lastSparTime = newTime; }

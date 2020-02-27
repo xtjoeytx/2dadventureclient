@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include "CScriptEngine.h"
 #include "TNPC.h"
-#include "TServer.h"
+#include "CRunnerStub.h"
 
 #include "V8ScriptFunction.h"
 #include "V8ScriptWrapped.h"
@@ -37,11 +37,11 @@ void Environment_ReportException(const v8::FunctionCallbackInfo<v8::Value>& args
 		v8::Local<v8::Context> context = args.GetIsolate()->GetCurrentContext();
 
 		// Unwrap Object
-		TServer *serverObject = UnwrapObject<TServer>(args.This());
+		CRunnerStub *runnerObject = UnwrapObject<CRunnerStub>(args.This());
 
-		// Report exception to server
+		// Report exception to runner
 		std::string message = *v8::String::Utf8Value(isolate, args[0]->ToString(isolate));
-		serverObject->reportScriptException(message);
+		runnerObject->reportScriptException(message);
 	}
 
 	SCRIPTENV_D("End Environment::reportException()\n\n");

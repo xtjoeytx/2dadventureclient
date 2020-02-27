@@ -427,7 +427,7 @@ bool TPlayer::sendLoginRC()
 	headImg = server->getSettings()->getStr("staffhead", "head25.png");
 
 	// Send the RC join message to the RC.
-	std::vector<CString> rcmessage = CString::loadToken(CString() << server->getServerPath() << "config/rcmessage.txt", "\n", true);
+	std::vector<CString> rcmessage = CString::loadToken(CString() << server->getRunnerPath() << "config/rcmessage.txt", "\n", true);
 	for (std::vector<CString>::iterator i = rcmessage.begin(); i != rcmessage.end(); ++i)
 		sendPacket(CString() >> (char)PLO_RC_CHAT << (*i));
 

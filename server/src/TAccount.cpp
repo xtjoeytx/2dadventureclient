@@ -63,7 +63,7 @@ bool TAccount::loadAccount(const CString& pAccount, bool ignoreNickname)
 	CString accpath(accfs->findi(CString() << pAccount << ".txt"));
 	if (accpath.length() == 0)
 	{
-		accpath = CString() << server->getServerPath() << "accounts/defaultaccount.txt";
+		accpath = CString() << server->getRunnerPath() << "accounts/defaultaccount.txt";
 		CFileSystem::fixPathSeparators(&accpath);
 		loadedFromDefault = true;
 	}
@@ -326,7 +326,7 @@ bool TAccount::saveAccount()
 	if (accountFileName.isEmpty()) accountFileName = CString() << accountName << ".txt";
 
 	// Save the account now.
-	CString accpath = CString() << server->getServerPath() << "accounts/" << accountFileName;
+	CString accpath = CString() << server->getRunnerPath() << "accounts/" << accountFileName;
 	CFileSystem::fixPathSeparators(&accpath);
 	if (!newFile.save(accpath))
 		server->getRCLog().out("** Error saving account: %s\n", accountName.text());

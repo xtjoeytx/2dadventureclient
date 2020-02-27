@@ -1,4 +1,5 @@
 #include <set>
+#include <tiletypes.h>
 #include "IDebug.h"
 #include "IEnums.h"
 #include "TClient.h"
@@ -1359,10 +1360,9 @@ TLevelLink * TLevel::isOnLink(int pX, int pY)
 {
 	if (!levelLinks.empty())
 	{
-		for (auto it = levelLinks.begin(); it != levelLinks.end(); ++it)
+		for (auto levelLink : levelLinks)
 		{
-			TLevelLink *levelLink = *it;
-			if ((pX >= levelLink->getX() && pX <= levelLink->getX() + levelLink->getWidth()) &&
+				if ((pX >= levelLink->getX() && pX <= levelLink->getX() + levelLink->getWidth()) &&
 				(pY >= levelLink->getY() && pY <= levelLink->getY() + levelLink->getHeight()))
 			{
 				return levelLink;
@@ -1375,10 +1375,9 @@ TLevelLink * TLevel::isOnLink(int pX, int pY)
 
 TNPC * TLevel::isOnNPC(int pX, int pY, bool checkEventFlag)
 {
-	for (auto it = levelNPCs.begin(); it != levelNPCs.end(); ++it)
+	for (auto npc : levelNPCs)
 	{
-		TNPC *npc = *it;
-		if (checkEventFlag && !npc->hasScriptEvent(NPCEVENTFLAG_PLAYERTOUCHSME))
+			if (checkEventFlag && !npc->hasScriptEvent(NPCEVENTFLAG_PLAYERTOUCHSME))
 			continue;
 
 		//if (!npc->getImage().isEmpty())
@@ -1400,20 +1399,24 @@ TNPC * TLevel::isOnNPC(int pX, int pY, bool checkEventFlag)
 
 bool TLevel::isOnWall(double pX, double pY)
 {
-	return false;
+	int roundX = int(round(pX));
+	int roundY = int(round(pY));
+	short tile = levelTiles[roundY * 64 + roundX];
+	unsigned char tiletype = tiletypes[tile];
+
+	return tiletype >= 20;
 }
 
 bool TLevel::isOnWater(double pX, double pY)
 {
-	return false;
+	return (tiletypes[levelTiles[(int)pY * 64 + (int)pX]] == 11);
 }
 
 void TLevel::sendChatToLevel(const TPlayer *player, const CString& message)
 {
-	for (std::vector<TNPC *>::iterator it = levelNPCs.begin(); it != levelNPCs.end(); ++it)
+	for (auto npc : levelNPCs)
 	{
-		TNPC *npc = *it;
-		if (npc->hasScriptEvent(NPCEVENTFLAG_PLAYERCHATS))
+			if (npc->hasScriptEvent(NPCEVENTFLAG_PLAYERCHATS))
 			npc->queueNpcEvent("npc.playerchats", true, player->getScriptObject(), std::string(message.text()));
 	}
 }

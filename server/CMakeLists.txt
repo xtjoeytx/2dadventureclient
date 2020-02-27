@@ -94,6 +94,31 @@ if(NOT NOUPNP)
 endif()
 
 if(V8NPCSERVER)
+	# GServer specific headers for implementation
+	list(
+			APPEND
+			HEADERS
+			include/CScriptEngine.h
+			include/script/ScriptAction.h
+			include/script/ScriptExecutionContext.h
+			include/script/ScriptFactory.h
+	)
+
+	# GServer specific source for implementation
+	list(
+			APPEND
+			SOURCES
+			src/CScriptEngine.cpp
+			src/script/V8EnvironmentImpl.cpp
+			src/script/V8FunctionsImpl.cpp
+			src/script/V8LevelImpl.cpp
+			src/script/V8NPCImpl.cpp
+			src/script/V8PlayerImpl.cpp
+			src/script/V8ScriptEnv.cpp
+			src/script/V8ServerImpl.cpp
+			src/script/V8WeaponImpl.cpp
+	)
+
 	# Headers for script library interface
 	list(
 		APPEND
@@ -124,30 +149,6 @@ if(V8NPCSERVER)
 		src/script/V8ScriptEnv.cpp
 	)
 
-	# GServer specific headers for implementation
-	list(
-		APPEND
-		HEADERS
-		include/CScriptEngine.h
-		include/script/ScriptAction.h
-		include/script/ScriptExecutionContext.h
-		include/script/ScriptFactory.h
-	)
-
-	# GServer specific source for implementation
-	list(
-		APPEND
-		SOURCES
-		src/CScriptEngine.cpp
-		src/script/V8EnvironmentImpl.cpp
-		src/script/V8FunctionsImpl.cpp
-		src/script/V8LevelImpl.cpp
-		src/script/V8NPCImpl.cpp
-		src/script/V8PlayerImpl.cpp
-		src/script/V8ScriptEnv.cpp
-		src/script/V8ServerImpl.cpp
-		src/script/V8WeaponImpl.cpp
-	)
 endif()
 
 if(SDL2)

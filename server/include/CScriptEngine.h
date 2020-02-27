@@ -3,7 +3,7 @@
 #ifndef CSCRIPTENGINE_H
 #define CSCRIPTENGINE_H
 
-#include <assert.h>
+#include <cassert>
 #include <string>
 #include <atomic>
 #include <chrono>
@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include "CRunnerStub.h"
 #include "ScriptBindings.h"
 #include "ScriptAction.h"
 #include "ScriptFactory.h"
@@ -20,13 +21,13 @@ class IScriptEnv;
 class IScriptFunction;
 
 class TNPC;
-class TServer;
+class CRunnerStub;
 class TWeapon;
 
 class CScriptEngine
 {
 public:
-	CScriptEngine(TServer *server);
+	explicit CScriptEngine(CRunnerStub *runner);
 	~CScriptEngine();
 
 	bool Initialize();
@@ -37,9 +38,9 @@ public:
 	void StartScriptExecution(const std::chrono::high_resolution_clock::time_point& startTime);
 	bool StopScriptExecution();
 
-	TServer * getServer() const;
+	CRunnerStub * getRunner() const;
 	IScriptEnv * getScriptEnv() const;
-	IScriptWrapped<TServer> * getServerObject() const;
+	IScriptWrapped<CRunnerStub> * getRunnerObject() const;
 
 	bool ExecuteNpc(TNPC *npc);
 	bool ExecuteWeapon(TWeapon *weapon);
@@ -75,9 +76,9 @@ public:
 private:
 	IScriptEnv *_env;
 	IScriptFunction *_bootstrapFunction;
-	IScriptWrapped<TServer> *_environmentObject;
-	IScriptWrapped<TServer> *_serverObject;
-	TServer *_server;
+	IScriptWrapped<CRunnerStub> *_environmentObject;
+	IScriptWrapped<CRunnerStub> *_runnerObject;
+	CRunnerStub *_runner;
 
 	// Script watcher
 	std::atomic<bool> _scriptIsRunning;
@@ -113,16 +114,16 @@ inline bool CScriptEngine::StopScriptExecution()
 
 // Getters
 
-inline TServer * CScriptEngine::getServer() const {
-	return _server;
+inline CRunnerStub * CScriptEngine::getRunner() const {
+	return _runner;
 }
 
 inline IScriptEnv * CScriptEngine::getScriptEnv() const {
 	return _env;
 }
 
-inline IScriptWrapped<TServer> * CScriptEngine::getServerObject() const {
-	return _serverObject;
+inline IScriptWrapped<CRunnerStub> * CScriptEngine::getRunnerObject() const {
+	return _runnerObject;
 }
 
 inline IScriptFunction * CScriptEngine::getCallBack(const std::string& callback) const {
@@ -189,15 +190,15 @@ ScriptAction * CScriptEngine::CreateAction(const std::string& action, Args... An
 	constexpr size_t Argc = (sizeof...(Args));
 	assert(Argc > 0);
 
-	SCRIPTENV_D("Server_RegisterAction:\n");
+	SCRIPTENV_D("Runner_RegisterAction:\n");
 	SCRIPTENV_D("\tAction: %s\n", action.c_str());
 	SCRIPTENV_D("\tArguments: %zu\n", Argc);
 
 	auto funcIt = _callbacks.find(action);
 	if (funcIt == _callbacks.end())
 	{
-		SCRIPTENV_D("Global::Server_RegisterAction: Callback not registered for %s\n", action.c_str());
-		return 0;
+		SCRIPTENV_D("Global::Runner_RegisterAction: Callback not registered for %s\n", action.c_str());
+		return nullptr;
 	}
 
 	// Create an arguments object, and pass it to ScriptAction

@@ -517,7 +517,7 @@ void NPC_Function_DrawOverPlayer(const v8::FunctionCallbackInfo<v8::Value>& args
 	// Toggle flags
 	int flags = npcObject->getVisibleFlags();
 	flags = (flags | NPCVISFLAG_DRAWOVERPLAYER) & ~(NPCVISFLAG_DRAWUNDERPLAYER);
-	
+
 	npcObject->setVisibleFlags(flags);
 	npcObject->updatePropModTime(NPCPROP_VISFLAGS);
 }
@@ -635,13 +635,13 @@ void NPC_Function_SetCharProp(const v8::FunctionCallbackInfo<v8::Value>& args)
 
 	// Throw an exception on constructor calls for method functions
 	V8ENV_THROW_CONSTRUCTOR(args, isolate);
-	
+
 	// Throw an exception if we don't receive the specified arguments
 	V8ENV_THROW_ARGCOUNT(args, isolate, 2);
 
 	CString code = *v8::String::Utf8Value(isolate, args[0]->ToString(isolate));
 	v8::String::Utf8Value newValue(isolate, args[1]->ToString(isolate));
-	
+
 	if (code[0] == '#')
 	{
 		// Unwrap object
@@ -785,8 +785,8 @@ void NPC_Function_Join(const v8::FunctionCallbackInfo<v8::Value>& args)
 
 		std::string className = *v8::String::Utf8Value(isolate, args[0]->ToString(context).ToLocalChecked());
 
-		TServer *server = scriptEngine->getServer();
-		CString classCode = server->getClass(className);
+		CRunnerStub *runner = scriptEngine->getRunner();
+		CString classCode = runner->getClass(className);
 
 		if (!classCode.isEmpty())
 		{
@@ -851,11 +851,11 @@ void NPC_Function_SetPM(const v8::FunctionCallbackInfo<v8::Value>& args)
 		V8ScriptFunction *cbFuncWrapper = new V8ScriptFunction(env, cbFunc);
 
 		// Set pm function
-		scriptEngine->getServer()->setPMFunction(npcObject, cbFuncWrapper);
+		scriptEngine->getRunner()->setPMFunction(npcObject, cbFuncWrapper);
 	}
 	else
 	{
-		scriptEngine->getServer()->setPMFunction(nullptr);
+		scriptEngine->getRunner()->setPMFunction(nullptr);
 	}
 }
 
@@ -881,9 +881,9 @@ void NPC_Function_Warpto(const v8::FunctionCallbackInfo<v8::Value>& args)
 
 			v8::Local<v8::External> data = args.Data().As<v8::External>();
 			CScriptEngine *scriptEngine = static_cast<CScriptEngine *>(data->Value());
-			TServer *server = scriptEngine->getServer();
+			CRunnerStub *runner = scriptEngine->getRunner();
 
-			TLevel *level = server->getLevel(*levelName);
+			TLevel *level = runner->getLevel(*levelName);
 			if (level != nullptr)
 			{
 				npcObject->warpNPC(level, (float)newX, (float)newY);
@@ -901,7 +901,7 @@ void NPC_Function_Warpto(const v8::FunctionCallbackInfo<v8::Value>& args)
 //void Npc_Constructor(const v8::FunctionCallbackInfo<v8::Value>& args)
 //{
 //	// TODO(joey): more proof of concept, likely to get axed.
-//	
+//
 //	// Called by V8. and should return an NPC object
 //	SCRIPTENV_D("Npc_Constructor called\n");
 //
@@ -910,15 +910,15 @@ void NPC_Function_Warpto(const v8::FunctionCallbackInfo<v8::Value>& args)
 //
 //	// Throw an exception on method functions for constructor calls
 //	V8ENV_THROW_METHOD(args, isolate);
-//	
+//
 //	// Retrieve external data for this call
 //	v8::Local<v8::External> data = args.Data().As<v8::External>();
 //	CScriptEngine *scriptEngine = static_cast<CScriptEngine *>(data->Value());
-//	
+//
 //	TNPC *newNpc = new TNPC(scriptEngine->getServer());
 //
 //	assert(args.This()->InternalFieldCount() > 0);
-//	
+//
 //	args.This()->SetAlignedPointerInInternalField(0, newNpc);
 //	args.GetReturnValue().Set(args.This());
 //}
@@ -1277,23 +1277,23 @@ void bindClass_NPC(CScriptEngine *scriptEngine)
 	// Retrieve v8 environment
 	V8ScriptEnv *env = static_cast<V8ScriptEnv *>(scriptEngine->getScriptEnv());
 	v8::Isolate *isolate = env->Isolate();
-	
+
 	// External pointer
 	v8::Local<v8::External> engine_ref = v8::External::New(isolate, scriptEngine);
 
 	// Create V8 string for "npc"
 	v8::Local<v8::String> npcStr = v8::String::NewFromUtf8(isolate, "npc", v8::NewStringType::kInternalized).ToLocalChecked();
-	
+
 	// Create constructor for class
 	v8::Local<v8::FunctionTemplate> npc_ctor = v8::FunctionTemplate::New(isolate, nullptr, engine_ref);
 	v8::Local<v8::ObjectTemplate> npc_proto = npc_ctor->PrototypeTemplate();
-	
+
 	npc_ctor->SetClassName(npcStr);
 	npc_ctor->InstanceTemplate()->SetInternalFieldCount(1);
-	
+
 	// Static functions on the npc object
 	//npc_ctor->Set(v8::String::NewFromUtf8(isolate, "create"), v8::FunctionTemplate::New(isolate, Npc_createFunction, engine_ref));
-	
+
 	// Method functions
 	// TODO(joey): Implement these functions
 	npc_proto->Set(v8::String::NewFromUtf8(isolate, "blockagain"), v8::FunctionTemplate::New(isolate, NPC_Function_BlockAgain, engine_ref));
