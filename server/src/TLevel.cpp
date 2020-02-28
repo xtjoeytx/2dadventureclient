@@ -1335,7 +1335,6 @@ bool TLevel::doTimedEvents()
 	return true;
 }
 
-
 bool TLevel::isOnWall(double pX, double pY)
 {
 	if (pX < 0 || pY < 0 || pX > 63 || pY > 63) return true;

@@ -211,6 +211,14 @@ void TGameWindow::init() {
 
 	font=TTF_OpenFont("8-bit-pusab.ttf", 15);
 	fontSmaller=TTF_OpenFont("TEMPSITC.TTF", 20);
+	if(font == nullptr) {
+		client->log("\t** [Error] TTF_OpenFont: %s\n", TTF_GetError());
+		exit(1);
+	}
+	if(fontSmaller == nullptr) {
+		client->log("\t** [Error] TTF_OpenFont: %s\n", TTF_GetError());
+		exit(1);
+	}
 	TTF_SetFontStyle(fontSmaller, TTF_STYLE_BOLD);
 	//TTF_SetFontOutline(fontSmaller, 1);
 	//TTF_SetFontHinting(fontSmaller, TTF_HINTING_NORMAL);
