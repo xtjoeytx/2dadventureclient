@@ -26,6 +26,8 @@
 #define TileIndex(x, y, tileWidth, tilesetHeight) (x / tileWidth * tilesetHeight + x % tileWidth + y * tileWidth)
 #define TileX(levelTile, tileWidth, tilesetHeight)  (( ( levelTile / tilesetHeight ) * tileWidth + levelTile % tileWidth ) * tileWidth)
 #define TileY(levelTile, tileWidth, tilesetHeight)  (( ( levelTile % tilesetHeight  ) / tileWidth ) * tileWidth)
+#define getXOffset(x) ((64 * 16) * (x->getLevel()->getMap() ? x->getLevel()->getMap()->getLevelX(x->getLevel()->getLevelName()) : 0))
+#define getYOffset(x) ((64 * 16) * (x->getLevel()->getMap() ? x->getLevel()->getMap()->getLevelY(x->getLevel()->getLevelName()) : 0))
 static const Uint32 rmask = 0x000000ff;
 static const Uint32 gmask = 0x0000ff00;
 static const Uint32 bmask = 0x00ff0000;
@@ -209,48 +211,59 @@ void TGameWindow::init() {
 
 	atexit(TTF_Quit); /* remember to quit SDL_ttf */
 
-	font=TTF_OpenFont("8-bit-pusab.ttf", 15);
-	fontSmaller=TTF_OpenFont("TEMPSITC.TTF", 20);
+	const char* font1 = "8-bit-pusab.ttf";
+	const char* font2 = "TEMPSITC.TTF";
+	font=TTF_OpenFont(font1, 15);
+
+	fontSmaller=TTF_OpenFont(font2, 20);
+
 	if(font == nullptr) {
-		client->log("\t** [Error] TTF_OpenFont: %s\n", TTF_GetError());
+		client->log("\t** [Error] Unable to open font: %s\n", font1);
 		exit(1);
 	}
+
 	if(fontSmaller == nullptr) {
-		client->log("\t** [Error] TTF_OpenFont: %s\n", TTF_GetError());
+		client->log("\t** [Error] Unable to open font: %s\n", font2);
 		exit(1);
 	}
+
 	TTF_SetFontStyle(fontSmaller, TTF_STYLE_BOLD);
-	//TTF_SetFontOutline(fontSmaller, 1);
-	//TTF_SetFontHinting(fontSmaller, TTF_HINTING_NORMAL);
-
-
-	if(!font)
-	{
-		client->log("\t** [Error] TTF_OpenFont: %s\n", TTF_GetError());
-		exit(3);
-	}
 	/* end SDL_ttf */
 
 	/* start SDL_mixer */
-	/*
 	if(Mix_Init(~0)==-1)
 	{
-		server->log("\t ** [Error]Mix_Init: %s\n", Mix_GetError());
+		client->log("\t ** [Error]Mix_Init: %s\n", Mix_GetError());
 		exit(1);
 	}
 	atexit(Mix_Quit);
 
-	if(Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT,2,BUFFER) < 0)
-		exit(2);
-
-	auto *music = Mix_LoadMUS("aurora.mod");
-
-	Mix_PlayMusic(music, 0);*/
+	if(Mix_OpenAudio(MIX_DEFAULT_FREQUENCY, MIX_DEFAULT_FORMAT,2, BUFFER) < 0)
+		exit(1);
 	/* end SDL_mixer */
 
 	const char* test = "Loading...";
 
 	drawText(font,test, 10, 10, {255,255,255});
+}
+
+Mix_Chunk * TGameWindow::loadSound(const char* fileName) {
+	return Mix_LoadWAV(fileName);
+}
+
+void TGameWindow::destroySound(Mix_Chunk * sound) {
+	Mix_FreeChunk(sound);
+}
+
+int TGameWindow::getFreeChannel()
+{
+	int allocated_chans = Mix_AllocateChannels(-1);
+	for(int i = 0; i < allocated_chans; ++i)
+	{
+		if(Mix_Playing(i) != 1)
+			return i;
+	}
+	return -1;
 }
 
 bool TGameWindow::doMain() {
@@ -416,7 +429,7 @@ void TGameWindow::drawScreen() {
 				if (tmpImg)
 					tmpImg->render(((levelWidth * tile.w) * (animationObject->getLevel()->getMap() ? animationObject->getLevel()->getMap()->getLevelX(animationObject->getLevel()->getLevelName()) : 0)) + animationObject->getPixelX() - cameraX, ((levelHeight * tile.h) * (animationObject->getLevel()->getMap() ? animationObject->getLevel()->getMap()->getLevelY(animationObject->getLevel()->getLevelName()) : 0)) + animationObject->getPixelY()- cameraY, 0, 0, animationObject->getWidth(), animationObject->getHeight());
 			} else if (animationObject->getImage().match("#c#")) {
-				drawAnimation(animationObject, ((levelWidth * tile.w) * (animationObject->getLevel()->getMap() ? animationObject->getLevel()->getMap()->getLevelX(animationObject->getLevel()->getLevelName()) : 0)) + animationObject->getPixelX() - cameraX, ((levelHeight * tile.h) * (animationObject->getLevel()->getMap() ? animationObject->getLevel()->getMap()->getLevelY(animationObject->getLevel()->getLevelName()) : 0)) + animationObject->getPixelY() - cameraY, time_diff.count());
+				drawAnimation(animationObject, getXOffset(animationObject) + animationObject->getPixelX() - cameraX, getYOffset(animationObject) + animationObject->getPixelY() - cameraY, time_diff.count());
 			}
 		}
 

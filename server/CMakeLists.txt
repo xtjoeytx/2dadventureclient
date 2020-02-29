@@ -48,6 +48,7 @@ set(
 	src/TWeapon.cpp
 	src/Timer.cpp
 	src/TImage.cpp
+	src/TSound.cpp
 	src/TAnimation.cpp
 	src/TGameWindow.cpp
 )
@@ -75,9 +76,10 @@ set(
 	include/TWeapon.h
 	include/Timer.h
 	include/TImage.h
+	include/TSound.h
 	include/TAnimation.h
 	include/TGameWindow.h
-		include/CAnimationObjectStub.h)
+	include/CAnimationObjectStub.h)
 
 if(NOT NOUPNP)
 	list(
@@ -96,27 +98,27 @@ endif()
 if(V8NPCSERVER)
 	# GServer specific headers for implementation
 	list(
-			APPEND
-			HEADERS
-			include/CScriptEngine.h
-			include/script/ScriptAction.h
-			include/script/ScriptExecutionContext.h
-			include/script/ScriptFactory.h
+		APPEND
+		HEADERS
+		include/CScriptEngine.h
+		include/script/ScriptAction.h
+		include/script/ScriptExecutionContext.h
+		include/script/ScriptFactory.h
 	)
 
 	# GServer specific source for implementation
 	list(
-			APPEND
-			SOURCES
-			src/CScriptEngine.cpp
-			src/script/V8EnvironmentImpl.cpp
-			src/script/V8FunctionsImpl.cpp
-			src/script/V8LevelImpl.cpp
-			src/script/V8NPCImpl.cpp
-			src/script/V8PlayerImpl.cpp
-			src/script/V8ScriptEnv.cpp
-			src/script/V8ServerImpl.cpp
-			src/script/V8WeaponImpl.cpp
+		APPEND
+		SOURCES
+		src/CScriptEngine.cpp
+		src/script/V8EnvironmentImpl.cpp
+		src/script/V8FunctionsImpl.cpp
+		src/script/V8LevelImpl.cpp
+		src/script/V8NPCImpl.cpp
+		src/script/V8PlayerImpl.cpp
+		src/script/V8ScriptEnv.cpp
+		src/script/V8ServerImpl.cpp
+		src/script/V8WeaponImpl.cpp
 	)
 
 	# Headers for script library interface

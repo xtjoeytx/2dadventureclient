@@ -61,16 +61,19 @@ public:
 
 	GameTexture * renderLoadImage(const char *file);
 
+	static Mix_Chunk * loadSound(const char* fileName);
+
+	static void destroySound(Mix_Chunk * sound);
+	static int getFreeChannel();
+
 	void renderBlit(GameTexture * texture, SDL_Rect * srcrect, SDL_Rect * dstrect);
 
 	void renderClear();
 
 	void renderPresent();
 
-	void renderSetWindowSize(int w, int h);
-
-	TTF_Font *font;
-	TTF_Font *fontSmaller;
+	TTF_Font *font{};
+	TTF_Font *fontSmaller{};
 private:
 
 	TClient * client;
@@ -84,13 +87,13 @@ private:
 	Sint16 screenWidth;
 	Sint16 screenHeight;
 	const static int FRAMES_PER_SECOND = 60;
-	SDL_Event event;
+	SDL_Event event{};
 	int frame = 0;
 	Timer fps;
 
-	int prevY;
+	int prevY{};
 	std::map<Sint32, bool> keys;
-	static int BUFFER;
+	int BUFFER{};
 
 	void sdlEvents();
 
@@ -115,7 +118,7 @@ private:
 
 	void renderChangeSurfaceSize();
 
-	int fps_current;
+	int fps_current{};
 
 	/* Guichan SDL stuff we need */
 	gcn::SDLInput* input;             // Input driver

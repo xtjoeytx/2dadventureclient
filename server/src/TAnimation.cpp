@@ -15,9 +15,10 @@ TAnimation::TAnimation(const CString& pName, TClient * client) : client(client)
 	real = pName.text() + pName.findl(CFileSystem::getPathSeparator()) + 1;
 	loaded = false;
 
-	load();
-
-	animations.emplace(real.text(), this);
+	if (load())
+		animations.emplace(real.text(), this);
+	else
+		delete this;
 }
 
 TAnimation::~TAnimation()
@@ -45,10 +46,7 @@ bool TAnimation::load()
 	auto * fs = client->getFileSystem();
 	auto file = fs->load(real);
 	if (file == "")
-	{
-		delete this;
 		return false;
-	}
 
 	auto lines = file.replaceAll('\r',"").tokenize("\n");
 	bool aniStarted = false;
@@ -213,7 +211,7 @@ void TAnimationSprite::render(CAnimationObjectStub * player, int pX, int pY)
 		tmpImg = img;
 	}
 
-	image = TImage::find(tmpImg, client);
+	image = TImage::find(tmpImg.c_str(), client);
 
 	if (image == nullptr)
 		return;

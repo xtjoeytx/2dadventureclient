@@ -135,9 +135,30 @@ int TClient::init(
 		}
 	}
 
+	clientLog.out("Loading animations:\n");
+
 	for (auto & file : *filesystem[0].getFileList()) {
-		if (file.first.find(".gani"))
+		if (file.first.find(".gani") > 0) {
+			clientLog.out("\t%s\n", file.first.text());
+			gameWindow->renderClear();
+			gameWindow->drawText(gameWindow->font, file.first.text(), 10,10, { 255, 255, 255});
+			gameWindow->renderPresent();
+
 			TAnimation::find(file.first.text(), this);
+		}
+	}
+
+	clientLog.out("Loading sounds:\n");
+
+	for (auto & file : *filesystem[0].getFileList()) {
+		if (file.first.find(".wav") > 0) {
+			clientLog.out("\t%s\n", file.first.text());
+			gameWindow->renderClear();
+			gameWindow->drawText(gameWindow->font, file.first.text(), 10, 10, { 255, 255, 255 });
+			gameWindow->renderPresent();
+
+			TSound::find(file.first.text(), this);
+		}
 	}
 
 #ifndef __AMIGA__
@@ -231,7 +252,7 @@ int TClient::init(
 	return 0;
 }
 
-void TClient::log(const CString format, ...) {
+void TClient::log(const CString& format, ...) {
 	va_list s_format_v;
 
 	va_start(s_format_v, format);

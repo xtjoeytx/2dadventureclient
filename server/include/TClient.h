@@ -236,7 +236,7 @@ class TClient : public CRunnerStub
 		bool NC_AddWeapon(TWeapon *pWeaponObj);
 		bool NC_DelWeapon(const CString& pWeaponName);
 		void updateWeaponForPlayers(TWeapon *pWeapon);
-		void log(const CString format, ...);
+		void log(const CString& format, ...);
 
 	private:
 		bool doTimedEvents();

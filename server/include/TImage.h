@@ -10,29 +10,29 @@
 class TImage
 {
 	public:
-		explicit TImage(const CString& pName, TClient * theServer);
+		explicit TImage(const CString& pName, TClient * client);
 		~TImage();
 
 		CString name, real;
 
-		bool countChange(int pCount);
-		bool loadTexture(const CString& pImage);
+		bool loadTexture(const char* fileName);
+
 		inline void render(int pX, int pY);
 		inline void render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pHeight, int alpha);
 		void render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pHeight, int r, int g, int b, int a = SDL_ALPHA_OPAQUE);
 
-		static TImage *find(const std::string& pName, TClient * theServer, bool addIfMissing = false);
+		static TImage *find(const char* fileName, TClient * client, bool addIfMissing = false);
 
-		int getWidth() const { return width; }
-		int getHeight() const { return height; }
+		[[nodiscard]] int getWidth() const { return width; }
+		[[nodiscard]] int getHeight() const { return height; }
 
 	private:
 		bool loaded;
-		int imgcount, fullwidth, fullheight, height, width;
+		int imgcount, fullwidth{}, fullheight{}, height{}, width{};
 
-		GameTexture * texture;
+		GameTexture * texture{};
 
-		TClient *server;
+		TClient *client;
 };
 
 inline void TImage::render(int pX, int pY)

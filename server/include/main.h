@@ -4,6 +4,7 @@
 #include <SDL.h>
 #include "CString.h"
 #include "TImage.h"
+#include "TSound.h"
 #include "TAnimation.h"
 #include <unordered_map>
 
@@ -12,6 +13,7 @@ void printHelp(const char* pname);
 const CString getHomePath();
 void shutdownClient(int sig);
 static std::unordered_map<std::string, TImage *> imageList;
+static std::unordered_map<std::string, TSound *> audioList;
 static std::unordered_map<std::string, TAnimation *> animations;
 
 

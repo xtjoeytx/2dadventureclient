@@ -4,15 +4,13 @@
 #include "TImage.h"
 #include "TClient.h"
 
-TImage::TImage(const CString& pName, TClient *theServer) {
-	server = theServer;
+TImage::TImage(const CString& pName, TClient *client) : client(client), texture(nullptr) {
 	name = pName;
 	real = pName.text() + pName.findl(CFileSystem::getPathSeparator()) + 1;
 
-
 	imgcount = 1;
-	if ( real.find(".png"))
-		loaded = loadTexture(pName);
+	if ( real.find(".png") > 0 )
+		loaded = loadTexture(pName.text());
 	else
 		loaded = true;
 
@@ -31,12 +29,12 @@ TImage::~TImage()
 	}
 }
 
-bool TImage::loadTexture(const CString& pImage) {
+bool TImage::loadTexture(const char* fileName) {
 	//Load image at specified path
-	GameTexture* loadedSurface = server->gameWindow->renderLoadImage(pImage.text());
+	GameTexture* loadedSurface = client->gameWindow->renderLoadImage(fileName);
 
 	if( loadedSurface == nullptr ) {
-		printf( "Unable to load image %s!\n", pImage.text() );
+		printf( "Unable to load image %s!\n", fileName );
 		return false;
 	} else {
 		TGameWindow::renderQueryTexture(loadedSurface, &width, &height);
@@ -55,20 +53,20 @@ void TImage::render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pH
 	if (a < SDL_ALPHA_OPAQUE) {
 		TGameWindow::renderSetAlpha(texture, a);
 	}
-	server->gameWindow->renderBlit(texture, &srcRect, &dstRect);
+	client->gameWindow->renderBlit(texture, &srcRect, &dstRect);
 
 }
 
-TImage *TImage::find(const std::string& pName, TClient *theServer, bool addIfMissing) {
-	if ( pName.empty()) return nullptr;
+TImage *TImage::find(const char* fileName, TClient *theServer, bool addIfMissing) {
+	if ( strlen(fileName) == 0 ) return nullptr;
 
-	auto imageIter = imageList.find(pName);
+	auto imageIter = imageList.find(fileName);
 	if ( imageIter != imageList.end()) {
 		return imageIter->second;
 	}
 
 	if (addIfMissing) {
-		auto imageFile = theServer->getFileSystem(0)->find(pName);
+		auto imageFile = theServer->getFileSystem(0)->find(fileName);
 		if ( imageFile != nullptr )
 			return new TImage(imageFile, theServer);
 	}
