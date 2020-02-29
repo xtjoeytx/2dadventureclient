@@ -34,3 +34,5 @@ bin/data/world/images/*.jpg
 bin/data/accounts/*
 bin/data/startuplog.txt
 bin/2dadventureclient
+
+bin/data/world/sounds/

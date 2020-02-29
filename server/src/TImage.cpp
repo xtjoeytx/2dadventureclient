@@ -57,7 +57,7 @@ void TImage::render(int pX, int pY, int pStartX, int pStartY, int pWidth, int pH
 
 }
 
-TImage *TImage::find(const char* fileName, TClient *theServer, bool addIfMissing) {
+TImage *TImage::find(const char* fileName, TClient *client, bool addIfMissing) {
 	if ( strlen(fileName) == 0 ) return nullptr;
 
 	auto imageIter = imageList.find(fileName);
@@ -66,9 +66,9 @@ TImage *TImage::find(const char* fileName, TClient *theServer, bool addIfMissing
 	}
 
 	if (addIfMissing) {
-		auto imageFile = theServer->getFileSystem(0)->find(fileName);
+		auto imageFile = client->getFileSystem(0)->find(fileName);
 		if ( imageFile != nullptr )
-			return new TImage(imageFile, theServer);
+			return new TImage(imageFile, client);
 	}
 
 	return nullptr;

@@ -46,10 +46,10 @@ class TAnimation
 		CString name, real;
 
 		bool load();
+
 		void render(CAnimationObjectStub* player, int pX, int pY, int pDir, int *pStep, float time);
 
-		static TAnimation *find(const char *pName, TClient * client);
-		TImage *findImage(char *pName);
+		static TAnimation *find(const char *pName, TClient * client, bool addIfMissing = false);
 	private:
 		bool isLoop = false, isContinuous = false, isSingleDir = false;
 		CString setBackTo;

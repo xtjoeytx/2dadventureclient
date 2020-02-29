@@ -144,7 +144,7 @@ int TClient::init(
 			gameWindow->drawText(gameWindow->font, file.first.text(), 10,10, { 255, 255, 255});
 			gameWindow->renderPresent();
 
-			TAnimation::find(file.first.text(), this);
+			TAnimation::find(file.first.text(), this, true);
 		}
 	}
 

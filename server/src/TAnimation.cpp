@@ -157,30 +157,17 @@ void TAnimation::render(CAnimationObjectStub * player, int pX, int pY, int pDir,
 	client->gameWindow->drawText(client->gameWindow->fontSmaller, player->getNickname().text(), pX+24, pY+44,{255,255,255}, CENTERED);
 }
 
-TAnimation *TAnimation::find(const char *pName, TClient * client)
+TAnimation *TAnimation::find(const char *fileName, TClient * client, bool addIfMissing)
 {
-	auto aniIter = animations.find(pName);
+	auto aniIter = animations.find(fileName);
 	if (aniIter != animations.end()) {
 		return aniIter->second;
 	}
-	auto ani = new TAnimation(client->getFileSystem(0)->find(pName), client);
 
-	while (!ani->loaded) ;
-
-	return ani;
-}
-
-TImage *TAnimation::findImage(char *pName)
-{
-	auto imageIter = imageList.find(pName);
-	if ( imageIter != imageList.end()) {
-		return imageIter->second;
-	}
-
-	auto * img = TImage::find(pName, client);
-	if (img != nullptr) {
-		imageList.emplace(pName, img);
-		return img;
+	if (addIfMissing) {
+		auto aniFile = client->getFileSystem(0)->find(fileName);
+		if ( aniFile != nullptr )
+			return new TAnimation(aniFile, client);
 	}
 
 	return nullptr;
