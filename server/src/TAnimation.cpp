@@ -58,21 +58,27 @@ bool TAnimation::load()
 		if (words.empty())
 			continue;
 
-		if (words[0] == "CONTINUOUS" && words.size() == 2)
+		if (words[0] == "CONTINUOUS")
 		{
-			isContinuous = atoi(words[1].text());
+			isContinuous = true;
 		}
-		else if (words[0] == "LOOP" && words.size() == 2)
+		else if (words[0] == "LOOP")
 		{
-			isLoop = atoi(words[1].text());
+			isLoop = true;
 		}
-		else if (words[0] == "SETBACKTO" && words.size() == 2)
+		else if (words[0] == "SETBACKTO" && words.size() > 1)
 		{
-			setBackTo = words[1];
+			// This should make SETBACKTO accept animation names with spaces
+			for(int i = 1; i < words.size(); i++){
+				if(i > 1){
+					setBackTo += " ";
+				}
+				setBackTo += words[i];
+			}
 		}
-		else if (words[0] == "SINGLEDIRECTION" && words.size() == 2)
+		else if (words[0] == "SINGLEDIRECTION")
 		{
-			isSingleDir = atoi(words[1].text());
+			isSingleDir = true;
 		}
 		else if (words[0] == "SPRITE")
 		{
